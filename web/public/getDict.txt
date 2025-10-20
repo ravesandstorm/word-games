@@ -1,0 +1,13 @@
+35614 nouns from https://www.reddit.com/r/learnprogramming/comments/4yoap9/large_word_list_of_english_nouns/
+
+x = <list of all nouns>
+x = x.split('\n')
+x = [i for i in x if i]
+x = [i for i in x if ' ' not in i]
+x = [i for i in x if '-' not in i]
+x = [i for i in x if i[0].islower()]
+x = [i for i in x if 2<len(i)<=11]
+print('[')
+for i in x: print('   "'+i.upper()+'",')
+print(']')
+print(len(x))
