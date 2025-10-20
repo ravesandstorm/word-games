@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Cell, Player, Position } from '~/types/game';
+import type { Cell, Player, Position } from '../../types/game';
 
 const props = defineProps<{
   board: Cell[][];

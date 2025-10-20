@@ -1,4 +1,4 @@
-import type { Cell, Player, Position } from '~/types/game';
+import type { Cell, Player, Position } from '../../types/game';
 
 export function useGame() {
   const board = ref<Cell[][]>([]);
@@ -17,7 +17,6 @@ export function useGame() {
 
   const initializeBoard = (size: number) => {
     console.log(`[GAME] Initializing ${size}x${size} board`);
-    
     const newBoard: Cell[][] = Array(size).fill(null).map(() =>
       Array(size).fill(null).map(() => ({ 
         letter: '', 
@@ -28,15 +27,15 @@ export function useGame() {
 
     // Place starter word
     const words = ['GAME', 'WORD', 'PLAY', 'START', 'BEGIN', 'CHESS', 'MAGIC'];
-    const randomWord = words[Math.floor(Math.random() * words.length)];
-    const centerRow = Math.floor(size / 2);
-    const startCol = Math.floor((size - randomWord.length) / 2);
+    const randomWord = words[Math.floor(Math.random() * words.length)] as string;
+    const centerRow = Math.floor(size / 2) as number;
+    const startCol = Math.floor((size - randomWord.length) / 2) as number;
 
     console.log(`[GAME] Placing starter word "${randomWord}" at [${centerRow}, ${startCol}]`);
 
     for (let i = 0; i < randomWord.length; i++) {
-      newBoard[centerRow][startCol + i] = {
-        letter: randomWord[i],
+      newBoard![centerRow]![startCol + i] = {
+        letter: randomWord[i] as string,
         isTemp: false,
         isPermanent: true
       };
@@ -53,12 +52,12 @@ export function useGame() {
     if (!selectedCell.value) return false;
 
     const pos = selectedCell.value;
-    const cell = board.value[pos.row][pos.col];
+    const cell = board.value[pos.row]![pos.col]! as Cell;
 
     // If replacing temp letter, don't increment counter
     if (cell.isTemp) {
       console.log(`[GAME] Replacing temp letter at [${pos.row}, ${pos.col}]`);
-      board.value[pos.row][pos.col].letter = letter;
+      board.value[pos.row]![pos.col]!.letter = letter;
       return true;
     }
 
@@ -73,7 +72,7 @@ export function useGame() {
     }
 
     console.log(`[GAME] Placing "${letter}" at [${pos.row}, ${pos.col}]`);
-    board.value[pos.row][pos.col] = { letter, isTemp: true, isPermanent: false };
+    board.value[pos.row]![pos.col]! = { letter, isTemp: true, isPermanent: false };
     lettersPlaced.value++;
     tempPositions.value.push({ ...pos });
 
@@ -84,9 +83,9 @@ export function useGame() {
     console.log('[GAME] Clearing all temp letters');
     
     for (let row = 0; row < board.value.length; row++) {
-      for (let col = 0; col < board.value[row].length; col++) {
-        if (board.value[row][col].isTemp) {
-          board.value[row][col] = { letter: '', isTemp: false, isPermanent: false };
+      for (let col = 0; col < board.value[row]!.length; col++) {
+        if (board.value[row]![col]!.isTemp) {
+          board.value[row]![col]! = { letter: '', isTemp: false, isPermanent: false };
         }
       }
     }
@@ -99,10 +98,10 @@ export function useGame() {
     console.log('[GAME] Committing temp letters to permanent');
     
     for (let row = 0; row < board.value.length; row++) {
-      for (let col = 0; col < board.value[row].length; col++) {
-        if (board.value[row][col].isTemp) {
-          board.value[row][col] = { 
-            ...board.value[row][col], 
+      for (let col = 0; col < board.value[row]!.length; col++) {
+        if (board.value[row]![col]!.isTemp) {
+          board.value[row]![col]! = { 
+            ...board.value[row]![col]!, 
             isTemp: false, 
             isPermanent: true 
           };

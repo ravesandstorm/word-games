@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from '~/types/game';
+import type { Player } from '../../types/game';
 
 interface GameSettings {
   boardSize: number;

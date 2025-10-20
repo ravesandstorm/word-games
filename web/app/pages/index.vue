@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from '~/types/game';
+import type { Player, Position } from '../../types/game';
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
@@ -258,7 +258,7 @@ const removeLetterAtCell = () => {
   game.board.value[pos.row][pos.col] = { letter: '', isTemp: false, isPermanent: false };
   game.lettersPlaced.value = Math.max(0, game.lettersPlaced.value - 1);
   game.tempPositions.value = game.tempPositions.value.filter(
-    p => p.row !== pos.row || p.col !== pos.col
+    (p: Position) => p.row !== pos.row || p.col !== pos.col
   );
 };
 
@@ -368,6 +368,6 @@ const resetGame = () => {
   game.currentRound.value = 1;
   game.currentPlayerIndex.value = 0;
   game.usedWords.value = [];
-  game.players.value.forEach(p => p.score = 0);
+  game.players.value.forEach((p: Player) => p.score = 0);
 };
 </script>

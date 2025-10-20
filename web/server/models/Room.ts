@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { Room as RoomType } from '~/types/game';
+import type { Room as RoomType } from '../../types/game';
 
 const roomSchema = new mongoose.Schema({
   roomCode: { type: String, required: true, unique: true, index: true },
