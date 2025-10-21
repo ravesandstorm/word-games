@@ -61,34 +61,44 @@ export function useWordValidation() {
         `[WORD-EXTRACTION] Extended sequence: cols ${startCol}-${endCol}`
       );
 
-      // Check if sequence contains at least one permanent letter
-      let hasPermanent = false;
+      // Step 1: Find indices of all temporary letters
+      const tempIndices: number[] = [];
       for (let col = startCol; col <= endCol; col++) {
-        if (board[row]![col]!.isPermanent) {
-          hasPermanent = true;
-          break;
+        if (board[row]![col]!.isTemp) {
+          tempIndices.push(col);
         }
       }
 
-      if (!hasPermanent) {
-        console.log(
-          "[WORD-EXTRACTION] ✗ No permanent letters in sequence (cannot create isolated words)"
-        );
+      // If no temp letters, just return sequences with permanents
+      if (tempIndices.length === 0) {
+        console.log("[WORD-EXTRACTION] No temporary letters, skipping");
         return [];
       }
 
-      // Extract letters
-      const letters: string[] = [];
-      for (let col = startCol; col <= endCol; col++) {
-        letters.push(board[row]![col]!.letter);
-      }
+      // Step 2: Generate all subsequences that include all temp letters
+      // We'll consider sequences from the first temp to the last temp index
+      const firstTemp = tempIndices[0];
+      const lastTemp = tempIndices[tempIndices.length - 1];
 
-      console.log(`[WORD-EXTRACTION] Full sequence: "${letters.join("")}"`);
+      // Loop over possible start and end around temp range
+      for (let start = firstTemp as number; start >= startCol; start--) {
+        for (let end = lastTemp as number + 1; end <= endCol + 1; end++) {
+          const segment = board[row]!.slice(start, end);
 
-      // Generate all subsequences
-      for (let start = 0; start < letters.length; start++) {
-        for (let end = start + 2; end <= letters.length; end++) {
-          const word = letters.slice(start, end).join("");
+          // Check: segment includes all temp letters
+          const tempInSegment = segment.some((cell) => cell.isTemp);
+          const hasAllTemp = tempIndices.every(
+            (i) => i >= start && i < end
+          );
+
+          if (!hasAllTemp) continue;
+
+          // Check: must include at least one permanent letter
+          const hasPermanent = segment.some((cell) => cell.isPermanent);
+          if (!hasPermanent) continue;
+
+          // Build the word
+          const word = segment.map((cell) => cell.letter).join("");
           words.add(word);
         }
       }
@@ -120,34 +130,39 @@ export function useWordValidation() {
         `[WORD-EXTRACTION] Extended sequence: rows ${startRow}-${endRow}`
       );
 
-      // Check if sequence contains at least one permanent letter
-      let hasPermanent = false;
+      // Step 1: Find indices of all temporary letters in this column
+      const tempIndices: number[] = [];
       for (let row = startRow; row <= endRow; row++) {
-        if (board[row]![col]!.isPermanent) {
-          hasPermanent = true;
-          break;
+        if (board[row]![col]!.isTemp) {
+          tempIndices.push(row);
         }
       }
 
-      if (!hasPermanent) {
-        console.log(
-          "[WORD-EXTRACTION] ✗ No permanent letters in sequence (cannot create isolated words)"
-        );
+      // No temporary letters => skip
+      if (tempIndices.length === 0) {
+        console.log("[WORD-EXTRACTION] No temporary letters in column, skipping");
         return [];
       }
 
-      // Extract letters
-      const letters: string[] = [];
-      for (let row = startRow; row <= endRow; row++) {
-        letters.push(board[row]![col]!.letter);
-      }
+      // Step 2: Determine start and end of the required temp sequence
+      const firstTemp = tempIndices[0];
+      const lastTemp = tempIndices[tempIndices.length - 1];
 
-      console.log(`[WORD-EXTRACTION] Full sequence: "${letters.join("")}"`);
+      // Step 3: Generate all vertical sequences that include all temp letters
+      for (let start = firstTemp as number; start >= startRow; start--) {
+        for (let end = lastTemp as number+ 1; end <= endRow + 1; end++) {
+          const segment = board.slice(start, end).map(rowArr => rowArr[col]!);
 
-      // Generate all subsequences
-      for (let start = 0; start < letters.length; start++) {
-        for (let end = start + 2; end <= letters.length; end++) {
-          const word = letters.slice(start, end).join("");
+          // Check all temp letters are included
+          const hasAllTemp = tempIndices.every(i => i >= start && i < end);
+          if (!hasAllTemp) continue;
+
+          // Must include at least one permanent letter
+          const hasPermanent = segment.some((cell) => cell.isPermanent);
+          if (!hasPermanent) continue;
+
+          // Build word
+          const word = segment.map(cell => cell.letter).join("");
           words.add(word);
         }
       }
