@@ -7,8 +7,8 @@ export default defineEventHandler(async (event) => {
 
   console.log(`[API] POST /api/validate-words - Validating ${words.length} words`);
 
-  // Simulate 1000ms timeout
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Simulate 100ms timeout
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   const result = validateWords(words, usedWords);
 

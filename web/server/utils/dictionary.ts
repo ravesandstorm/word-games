@@ -36,37 +36,38 @@ const FALLBACK_WORDS = [
   'EAGLE', 'HAWK', 'OWL', 'CROW', 'RAVEN', 'DOVE', 'SWAN', 'DUCK', 'GOOSE', 'CHICKEN'
 ];
 
-let dictionaryCache: Set<string> | null = null;
+  let dictionaryCache: Set<string> | null = null;
 
-export function loadDictionary(): Set<string> {
-  if (dictionaryCache) {
-    return dictionaryCache;
-  }
-
-  console.log('[DICTIONARY] Loading dictionary...');
-
-  try {
-    const publicPath = path.join(process.cwd(), 'public', 'dictionary.json');
-    if (fs.existsSync(publicPath)) {
-      console.log('[DICTIONARY] Found dictionary.json in public folder');
-      const data = fs.readFileSync(publicPath, 'utf8');
-      const words = JSON.parse(data);
-      dictionaryCache = new Set(words.map((w: string) => w.toUpperCase()));
-      console.log(`[DICTIONARY] ✓ Loaded ${dictionaryCache.size} words from file`);
-      return dictionaryCache;
+  export function loadDictionary(): { size: number } {
+    if (dictionaryCache) {
+      console.log('[DICTIONARY] Using cached dictionary');
+      return { size: dictionaryCache.size };
     }
-  } catch (err) {
-    console.error('[DICTIONARY] ✗ Error loading dictionary.json:', err);
-  }
 
-  console.log('[DICTIONARY] Using fallback dictionary');
-  dictionaryCache = new Set(FALLBACK_WORDS);
-  console.log(`[DICTIONARY] ✓ Loaded ${dictionaryCache.size} fallback words`);
-  return dictionaryCache;
-}
+    console.log('[DICTIONARY] Loading dictionary...');
+
+    try {
+      const publicPath = path.join(process.cwd(), 'public', 'dictionary.json');
+      if (fs.existsSync(publicPath)) {
+        console.log('[DICTIONARY] Found dictionary.json in public folder');
+        const data = fs.readFileSync(publicPath, 'utf8');
+        const words = JSON.parse(data);
+        dictionaryCache = new Set(words.map((w: string) => w.toUpperCase()));
+        console.log(`[DICTIONARY] ✓ Loaded ${dictionaryCache.size} words from file`);
+        return { size: dictionaryCache.size };
+      }
+    } catch (err) {
+      console.error('[DICTIONARY] ✗ Error loading dictionary.json:', err);
+    }
+
+    console.log('[DICTIONARY] Using fallback dictionary');
+    dictionaryCache = new Set(FALLBACK_WORDS);
+    console.log(`[DICTIONARY] ✓ Loaded ${dictionaryCache.size} fallback words`);
+    return { size: dictionaryCache.size };
+  }
 
 export function validateWords(words: string[], usedWords: string[]): WordValidationResponse {
-  const dictionary = loadDictionary();
+  const dictionary = dictionaryCache || new Set(FALLBACK_WORDS);
   const usedSet = new Set(usedWords.map(w => w.toUpperCase()));
   
   console.log(`[VALIDATION] Validating ${words.length} words...`);
@@ -79,8 +80,8 @@ export function validateWords(words: string[], usedWords: string[]): WordValidat
     const isValid = isInDictionary && !alreadyUsed;
 
     const status = alreadyUsed ? 'ALREADY USED ✗' : 
-                   !isInDictionary ? 'NOT IN DICTIONARY ✗' : 
-                   'VALID ✓';
+                  !isInDictionary ? 'NOT IN DICTIONARY ✗' : 
+                  'VALID ✓';
     console.log(`[VALIDATION] "${word}": ${status}`);
 
     return {

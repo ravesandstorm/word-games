@@ -1,15 +1,15 @@
 import { isMongoConnected } from '../plugins/mongodb';
 import { loadDictionary } from '../utils/dictionary';
 
-export default defineEventHandler(() => {
+export default defineEventHandler(async () => {
   console.log('[API] GET /api/status');
   
-  const mongoAvailable = isMongoConnected();
-  const dictionary = loadDictionary();
+  const mongoAvailable = await isMongoConnected();
+  const dictionaryInfo = await loadDictionary();
   
   return {
     mongoAvailable,
-    dictionarySize: dictionary.size,
+    dictionarySize: dictionaryInfo.size,
     timestamp: new Date().toISOString()
   };
 });

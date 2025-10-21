@@ -188,6 +188,6 @@ export function useWordValidation() {
 
   return {
     extractWordsFromBoard,
-    validateWordsOnServer,
+    validateWordsOnServer
   };
 }

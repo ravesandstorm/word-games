@@ -67,7 +67,6 @@ const roundsPerIncrement = ref(6);
 
 const game = useGame();
 const validation = useWordValidation();
-
 // Check server status on mount
 onMounted(async () => {
   console.log('[APP] Component mounted, checking server status...');
@@ -75,7 +74,7 @@ onMounted(async () => {
     const status = await $fetch('/api/status');
     mongoAvailable.value = status.mongoAvailable;
     dictionarySize.value = status.dictionarySize;
-    console.log('[APP] ✓ Server status:', status);
+    console.log('[APP] ✓ Server status:', status); 
   } catch (err) {
     console.error('[APP] ✗ Failed to connect to server:', err);
     mongoAvailable.value = false;
@@ -140,7 +139,7 @@ const createRoom = async () => {
       method: 'POST',
       body: {
         hostId: 'host-' + Date.now(),
-        hostName: game.players.value[0].name,
+        hostName: game.players.value[0]!.name,
         gameSettings: {
           boardSize: boardSize.value,
           maxLettersPerTurn: maxLettersPerTurn.value,
@@ -194,13 +193,13 @@ const addPlayer = () => {
 
 const removePlayer = (index: number) => {
   if (game.players.value.length > 1) {
-    console.log(`[PLAYER] Removed: ${game.players.value[index].name}`);
+    console.log(`[PLAYER] Removed: ${game.players.value[index]!.name}`);
     game.players.value.splice(index, 1);
   }
 };
 
 const updatePlayerName = (index: number, name: string) => {
-  game.players.value[index].name = name;
+  game.players.value[index]!.name = name;
   console.log(`[PLAYER] Updated: ${name}`);
 };
 
@@ -247,15 +246,15 @@ const removeLetterAtCell = () => {
   if (!game.selectedCell.value) return;
 
   const pos = game.selectedCell.value;
-  const cell = game.board.value[pos.row][pos.col];
+  const cell = game.board.value[pos.row]![pos.col];
 
-  if (!cell.isTemp) {
+  if (!cell!.isTemp) {
     console.log('[INPUT] Cannot remove permanent letter');
     return;
   }
 
   console.log(`[INPUT] Removing letter at [${pos.row}, ${pos.col}]`);
-  game.board.value[pos.row][pos.col] = { letter: '', isTemp: false, isPermanent: false };
+  game.board.value[pos.row]![pos.col] = { letter: '', isTemp: false, isPermanent: false };
   game.lettersPlaced.value = Math.max(0, game.lettersPlaced.value - 1);
   game.tempPositions.value = game.tempPositions.value.filter(
     (p: Position) => p.row !== pos.row || p.col !== pos.col
@@ -292,9 +291,9 @@ const submitTurn = async () => {
     console.log('[SUBMIT] ========== VALIDATION RESULTS ==========');
     result.validWords.forEach((w, i) => {
       const status = !w.isValid && w.alreadyUsed ? 'ALREADY USED ✗' :
-                     !w.isValid ? 'INVALID ✗' :
-                     i === 0 ? 'VALID ✓ ← LONGEST' :
-                     'VALID ✓';
+                    !w.isValid ? 'INVALID ✗' :
+                    i === 0 ? 'VALID ✓ ← LONGEST' :
+                    'VALID ✓';
       console.log(`[SUBMIT] ${i + 1}. "${w.word}" (${w.length} letters) ${status}`);
     });
     console.log('[SUBMIT] =======================================');
@@ -312,8 +311,8 @@ const submitTurn = async () => {
     console.log(`[SUBMIT] ✓ Scoring word: "${longestWord}" (${longestLength} letters)`);
 
     // Add score
-    game.players.value[game.currentPlayerIndex.value].score += longestLength;
-    console.log(`[SUBMIT] New score: ${game.players.value[game.currentPlayerIndex.value].score}`);
+    game.players.value[game.currentPlayerIndex.value]!.score += longestLength;
+    console.log(`[SUBMIT] New score: ${game.players.value[game.currentPlayerIndex.value]!.score}`);
 
     // Mark words as used
     result.validWords.forEach(w => {
@@ -341,7 +340,7 @@ const submitTurn = async () => {
 
     // Next player
     game.currentPlayerIndex.value = (game.currentPlayerIndex.value + 1) % game.players.value.length;
-    console.log(`[SUBMIT] Next player: ${game.players.value[game.currentPlayerIndex.value].name}`);
+    console.log(`[SUBMIT] Next player: ${game.players.value[game.currentPlayerIndex.value]!.name}`);
 
     if (game.currentPlayerIndex.value === 0) {
       game.currentRound.value++;
