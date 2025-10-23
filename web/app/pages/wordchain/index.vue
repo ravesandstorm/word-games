@@ -16,6 +16,8 @@
       :is-creating="isCreatingRoom"
       :players="game.players.value"
       :message="statusMessage"
+      :lobby-player-count="socket.roomPlayers.value.length"
+      :lobby-players="socket.roomPlayers.value"
       @create-room="createRoom"
       @join-room="joinRoom"
       @copy-code="copyRoomCode"
@@ -67,6 +69,9 @@ const roundsPerIncrement = ref(6);
 
 const game = useGame();
 const validation = useWordValidation();
+const socket = useSocket();
+const currentPlayerId = ref('player-' + Date.now());
+
 // Check server status on mount
 onMounted(async () => {
   console.log('[APP] Component mounted, checking server status...');
@@ -128,17 +133,20 @@ const startOnlineSetup = () => {
   }
   isOnlineMode.value = true;
   gameState.value = 'setup';
+
+  // Connect to WebSocket
+  socket.connect();
 };
 
 const createRoom = async () => {
   console.log('[ROOM] Creating room...');
   isCreatingRoom.value = true;
-  
+
   try {
     const result = await $fetch('/api/rooms/create', {
       method: 'POST',
       body: {
-        hostId: 'host-' + Date.now(),
+        hostId: currentPlayerId.value,
         hostName: game.players.value[0]!.name,
         gameSettings: {
           boardSize: boardSize.value,
@@ -147,10 +155,13 @@ const createRoom = async () => {
         }
       }
     });
-    
+
     roomCode.value = result.roomCode;
     statusMessage.value = `Room created: ${result.roomCode}`;
     console.log(`[ROOM] ✓ Created: ${result.roomCode}`);
+
+    // Join the room via WebSocket
+    socket.joinRoom(result.roomCode, currentPlayerId.value, game.players.value[0]!.name);
   } catch (err) {
     console.error('[ROOM] ✗ Creation failed:', err);
     statusMessage.value = 'Failed to create room';
@@ -161,16 +172,19 @@ const createRoom = async () => {
 
 const joinRoom = async (code: string) => {
   console.log(`[ROOM] Joining: ${code}`);
-  
+
   try {
-    const result = await $fetch('/api/rooms/join', {
+    await $fetch('/api/rooms/join', {
       method: 'POST',
       body: { roomCode: code }
     });
-    
+
     roomCode.value = code;
     statusMessage.value = `Joined room: ${code}`;
     console.log(`[ROOM] ✓ Joined: ${code}`);
+
+    // Join the room via WebSocket
+    socket.joinRoom(code, currentPlayerId.value, game.players.value[0]!.name);
   } catch (err) {
     console.error('[ROOM] ✗ Join failed:', err);
     statusMessage.value = 'Room not found';
@@ -215,6 +229,13 @@ const startGame = (settings: any) => {
 
 const backToMenu = () => {
   console.log('[APP] Back to menu');
+
+  // Leave room if in online mode
+  if (isOnlineMode.value && roomCode.value) {
+    socket.leaveRoom(roomCode.value, currentPlayerId.value);
+    socket.disconnect();
+  }
+
   gameState.value = 'menu';
   roomCode.value = '';
   statusMessage.value = '';

@@ -1,372 +1,194 @@
 <template>
-  <div>
-    <MainMenu
-      v-if="gameState === 'menu'"
-      :mongo-available="mongoAvailable"
-      :dictionary-size="dictionarySize"
-      :message="statusMessage"
-      @local-game="startLocalSetup"
-      @online-game="startOnlineSetup"
-    />
-    
-    <GameSetup
-      v-else-if="gameState === 'setup'"
-      :is-online="isOnlineMode"
-      :room-code="roomCode"
-      :is-creating="isCreatingRoom"
-      :players="game.players.value"
-      :message="statusMessage"
-      @create-room="createRoom"
-      @join-room="joinRoom"
-      @copy-code="copyRoomCode"
-      @add-player="addPlayer"
-      @remove-player="removePlayer"
-      @update-player="updatePlayerName"
-      @start-game="startGame"
-      @back="backToMenu"
-    />
-    
-    <GameBoard
-      v-else-if="gameState === 'playing'"
-      :board="game.board.value"
-      :players="game.players.value"
-      :current-player-index="game.currentPlayerIndex.value"
-      :current-round="game.currentRound.value"
-      :selected-cell="game.selectedCell.value"
-      :letters-placed="game.lettersPlaced.value"
-      :current-limit="currentLetterLimit"
-      :is-validating="isValidating"
-      :message="statusMessage"
-      :room-code="roomCode"
-      :board-size="boardSize"
-      :used-words-count="game.usedWords.value.length"
-      :dictionary-size="dictionarySize"
-      @cell-click="handleCellClick"
-      @clear-letters="game.clearTempLetters"
-      @submit-turn="submitTurn"
-      @reset="resetGame"
-    />
+  <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500', theme.getGradientClass.value]">
+    <!-- Header with Theme Selector -->
+    <header class="bg-white/10 backdrop-blur-lg border-b border-white/20">
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-4xl font-bold text-white mb-1 animate-fade-in">Word Games Collection</h1>
+            <p class="text-gray-300 text-sm">Challenge your vocabulary and have fun!</p>
+          </div>
+
+          <!-- Theme Selector -->
+          <div class="flex gap-2 items-center">
+            <span class="text-white text-sm mr-2">Theme:</span>
+            <button
+              v-for="themeOption in themes"
+              :key="themeOption.name"
+              @click="theme.setTheme(themeOption.name)"
+              :class="[
+                'w-10 h-10 rounded-full border-2 transition-all transform hover:scale-110',
+                theme.currentTheme.value === themeOption.name ? 'border-white scale-110' : 'border-transparent',
+                themeOption.color
+              ]"
+              :title="themeOption.label"
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Game Cards -->
+        <div
+          v-for="game in games"
+          :key="game.id"
+          @mouseenter="hoveredGame = game.id"
+          @mouseleave="hoveredGame = null"
+          class="group relative bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl cursor-pointer"
+          @click="navigateToGame(game.route)"
+        >
+          <!-- Game Image/Icon -->
+          <div class="h-48 bg-gradient-to-br overflow-hidden relative" :class="game.gradient">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
+                {{ game.icon }}
+              </div>
+            </div>
+
+            <!-- Hover Overlay -->
+            <div
+              :class="[
+                'absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300',
+                hoveredGame === game.id ? 'opacity-100' : 'opacity-0'
+              ]"
+            >
+              <div class="text-center px-6">
+                <p class="text-white text-sm leading-relaxed">{{ game.description }}</p>
+                <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                  <span
+                    v-for="feature in game.features"
+                    :key="feature"
+                    class="bg-white/20 text-white text-xs px-3 py-1 rounded-full"
+                  >
+                    {{ feature }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Game Info -->
+          <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
+              {{ game.name }}
+            </h3>
+            <p class="text-gray-300 text-sm mb-4">{{ game.tagline }}</p>
+
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-yellow-400 text-sm">{{ game.difficulty }}</span>
+                <span class="text-gray-400 text-xs">•</span>
+                <span class="text-gray-400 text-sm">{{ game.players }}</span>
+              </div>
+
+              <button
+                :class="[
+                  'px-4 py-2 rounded-lg font-semibold text-sm transition-all transform group-hover:scale-110',
+                  theme.getAccentColor.value,
+                  'text-white'
+                ]"
+              >
+                Play Now →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="mt-16 text-center">
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl mx-auto">
+          <h2 class="text-2xl font-bold text-white mb-4">About Word Games</h2>
+          <p class="text-gray-300 leading-relaxed mb-4">
+            Welcome to our collection of word games! Challenge yourself with classic games like Wordle,
+            test your vocabulary with Word Chain, or compete with friends in Scrabble. Each game offers
+            unique challenges and endless fun.
+          </p>
+          <div class="flex justify-center gap-4 text-sm text-gray-400">
+            <span>🎮 3 Games</span>
+            <span>•</span>
+            <span>🌐 Online & Local Play</span>
+            <span>•</span>
+            <span>📊 Track Your Progress</span>
+          </div>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Player, Position } from '../../types/game';
+const theme = useTheme();
+const hoveredGame = ref<string | null>(null);
 
-const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
-const isOnlineMode = ref(false);
-const mongoAvailable = ref(false);
-const dictionarySize = ref(0);
-const roomCode = ref('');
-const isCreatingRoom = ref(false);
-const statusMessage = ref('');
-const isValidating = ref(false);
+const themes = [
+  { name: 'purple' as const, label: 'Purple', color: 'bg-purple-500' },
+  { name: 'blue' as const, label: 'Blue', color: 'bg-blue-500' },
+  { name: 'green' as const, label: 'Green', color: 'bg-green-500' },
+  { name: 'orange' as const, label: 'Orange', color: 'bg-orange-500' },
+  { name: 'pink' as const, label: 'Pink', color: 'bg-pink-500' }
+];
 
-const boardSize = ref(15);
-const maxLettersPerTurn = ref(3);
-const roundsPerIncrement = ref(6);
-
-const game = useGame();
-const validation = useWordValidation();
-// Check server status on mount
-onMounted(async () => {
-  console.log('[APP] Component mounted, checking server status...');
-  try {
-    const status = await $fetch('/api/status');
-    mongoAvailable.value = status.mongoAvailable;
-    dictionarySize.value = status.dictionarySize;
-    console.log('[APP] ✓ Server status:', status); 
-  } catch (err) {
-    console.error('[APP] ✗ Failed to connect to server:', err);
-    mongoAvailable.value = false;
+const games = [
+  {
+    id: 'wordchain',
+    name: 'Word Chain',
+    tagline: 'Build words, chain letters, score big!',
+    description: 'Place letters on the board to form words. Each word must connect to existing letters. Longer words score more points!',
+    icon: '🔗',
+    gradient: 'from-purple-600 to-blue-600',
+    route: '/wordchain',
+    difficulty: '⭐⭐⭐',
+    players: '1-4 Players',
+    features: ['Strategic', 'Multiplayer', 'Online']
+  },
+  {
+    id: 'scrabble',
+    name: 'Scrabble',
+    tagline: 'Classic word-building at its finest',
+    description: 'The timeless classic! Draw tiles, form words, and use multipliers strategically. Play locally or online with up to 3 players.',
+    icon: '📝',
+    gradient: 'from-green-600 to-teal-600',
+    route: '/scrabble',
+    difficulty: '⭐⭐⭐⭐',
+    players: '1-3 Players',
+    features: ['Classic', 'Multipliers', 'Tile Bag']
+  },
+  {
+    id: 'wordle',
+    name: 'Wordle',
+    tagline: 'Guess the word in 6 tries',
+    description: 'Guess the 5-letter word in 6 attempts. Green means correct position, yellow means wrong position. Track your win streak!',
+    icon: '🎯',
+    gradient: 'from-indigo-600 to-purple-600',
+    route: '/wordle',
+    difficulty: '⭐⭐',
+    players: 'Solo',
+    features: ['Daily Challenge', 'Win Streak', 'Quick Play']
   }
-});
+];
 
-// Keyboard controls
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyPress);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyPress);
-});
-
-const handleKeyPress = (e: KeyboardEvent) => {
-  if (gameState.value !== 'playing' || !game.selectedCell.value) return;
-
-  const key = e.key.toUpperCase();
-
-  if (key === 'ARROWUP' || key === 'ARROWDOWN' || key === 'ARROWLEFT' || key === 'ARROWRIGHT') {
-    e.preventDefault();
-    console.log(`[INPUT] Arrow key: ${key}`);
-    moveSelection(key);
-  } else if (key === 'BACKSPACE') {
-    e.preventDefault();
-    console.log('[INPUT] Backspace');
-    removeLetterAtCell();
-  } else if (key.length === 1 && key.match(/[A-Z]/)) {
-    e.preventDefault();
-    console.log(`[INPUT] Letter: ${key}`);
-    game.placeLetter(key, currentLetterLimit.value);
-  }
-};
-
-const currentLetterLimit = computed(() => {
-  return Math.floor((game.currentRound.value - 1) / roundsPerIncrement.value) + maxLettersPerTurn.value;
-});
-
-const startLocalSetup = () => {
-  console.log('[APP] Starting local game setup');
-  isOnlineMode.value = false;
-  gameState.value = 'setup';
-};
-
-const startOnlineSetup = () => {
-  console.log('[APP] Starting online game setup');
-  if (!mongoAvailable.value) {
-    statusMessage.value = 'MongoDB not available';
-    return;
-  }
-  isOnlineMode.value = true;
-  gameState.value = 'setup';
-};
-
-const createRoom = async () => {
-  console.log('[ROOM] Creating room...');
-  isCreatingRoom.value = true;
-  
-  try {
-    const result = await $fetch('/api/rooms/create', {
-      method: 'POST',
-      body: {
-        hostId: 'host-' + Date.now(),
-        hostName: game.players.value[0]!.name,
-        gameSettings: {
-          boardSize: boardSize.value,
-          maxLettersPerTurn: maxLettersPerTurn.value,
-          roundsPerIncrement: roundsPerIncrement.value
-        }
-      }
-    });
-    
-    roomCode.value = result.roomCode;
-    statusMessage.value = `Room created: ${result.roomCode}`;
-    console.log(`[ROOM] ✓ Created: ${result.roomCode}`);
-  } catch (err) {
-    console.error('[ROOM] ✗ Creation failed:', err);
-    statusMessage.value = 'Failed to create room';
-  } finally {
-    isCreatingRoom.value = false;
-  }
-};
-
-const joinRoom = async (code: string) => {
-  console.log(`[ROOM] Joining: ${code}`);
-  
-  try {
-    const result = await $fetch('/api/rooms/join', {
-      method: 'POST',
-      body: { roomCode: code }
-    });
-    
-    roomCode.value = code;
-    statusMessage.value = `Joined room: ${code}`;
-    console.log(`[ROOM] ✓ Joined: ${code}`);
-  } catch (err) {
-    console.error('[ROOM] ✗ Join failed:', err);
-    statusMessage.value = 'Room not found';
-  }
-};
-
-const copyRoomCode = (code: string) => {
-  navigator.clipboard.writeText(code);
-  statusMessage.value = 'Room code copied!';
-  console.log(`[ROOM] Code copied: ${code}`);
-  setTimeout(() => statusMessage.value = '', 2000);
-};
-
-const addPlayer = () => {
-  const newId = `local-${game.players.value.length + 1}`;
-  const newName = `Player ${game.players.value.length + 1}`;
-  game.players.value.push({ id: newId, name: newName, score: 0, isLocal: true });
-  console.log(`[PLAYER] Added: ${newName}`);
-};
-
-const removePlayer = (index: number) => {
-  if (game.players.value.length > 1) {
-    console.log(`[PLAYER] Removed: ${game.players.value[index]!.name}`);
-    game.players.value.splice(index, 1);
-  }
-};
-
-const updatePlayerName = (index: number, name: string) => {
-  game.players.value[index]!.name = name;
-  console.log(`[PLAYER] Updated: ${name}`);
-};
-
-const startGame = (settings: any) => {
-  console.log('[GAME] Starting with settings:', settings);
-  boardSize.value = settings.boardSize;
-  maxLettersPerTurn.value = settings.maxLettersPerTurn;
-  roundsPerIncrement.value = settings.roundsPerIncrement;
-  
-  game.initializeBoard(settings.boardSize);
-  gameState.value = 'playing';
-};
-
-const backToMenu = () => {
-  console.log('[APP] Back to menu');
-  gameState.value = 'menu';
-  roomCode.value = '';
-  statusMessage.value = '';
-};
-
-const handleCellClick = (row: number, col: number) => {
-  console.log(`[INPUT] Cell clicked: [${row}, ${col}]`);
-  game.selectedCell.value = { row, col };
-};
-
-const moveSelection = (direction: string) => {
-  if (!game.selectedCell.value) return;
-
-  let newRow = game.selectedCell.value.row;
-  let newCol = game.selectedCell.value.col;
-
-  switch (direction) {
-    case 'ARROWUP': newRow = Math.max(0, newRow - 1); break;
-    case 'ARROWDOWN': newRow = Math.min(boardSize.value - 1, newRow + 1); break;
-    case 'ARROWLEFT': newCol = Math.max(0, newCol - 1); break;
-    case 'ARROWRIGHT': newCol = Math.min(boardSize.value - 1, newCol + 1); break;
-  }
-
-  console.log(`[INPUT] Selection moved to: [${newRow}, ${newCol}]`);
-  game.selectedCell.value = { row: newRow, col: newCol };
-};
-
-const removeLetterAtCell = () => {
-  if (!game.selectedCell.value) return;
-
-  const pos = game.selectedCell.value;
-  const cell = game.board.value[pos.row]![pos.col];
-
-  if (!cell!.isTemp) {
-    console.log('[INPUT] Cannot remove permanent letter');
-    return;
-  }
-
-  console.log(`[INPUT] Removing letter at [${pos.row}, ${pos.col}]`);
-  game.board.value[pos.row]![pos.col] = { letter: '', isTemp: false, isPermanent: false };
-  game.lettersPlaced.value = Math.max(0, game.lettersPlaced.value - 1);
-  game.tempPositions.value = game.tempPositions.value.filter(
-    (p: Position) => p.row !== pos.row || p.col !== pos.col
-  );
-};
-
-const submitTurn = async () => {
-  if (game.lettersPlaced.value === 0) {
-    console.log('[SUBMIT] No letters placed');
-    statusMessage.value = 'Place at least one letter!';
-    return;
-  }
-
-  console.log('[SUBMIT] ========== SUBMITTING TURN ==========');
-  isValidating.value = true;
-  statusMessage.value = 'Validating words...';
-
-  try {
-    // Extract all possible words from board
-    const words = validation.extractWordsFromBoard(game.board.value, game.tempPositions.value);
-
-    if (words.length === 0) {
-      console.log('[SUBMIT] ✗ No valid word sequences found');
-      statusMessage.value = 'No valid words formed! Make sure letters are on same axis and touch existing letters.';
-      isValidating.value = false;
-      return;
-    }
-
-    console.log(`[SUBMIT] Validating ${words.length} word combinations...`);
-    
-    // Validate all words at once
-    const result = await validation.validateWordsOnServer(words, game.usedWords.value);
-
-    console.log('[SUBMIT] ========== VALIDATION RESULTS ==========');
-    result.validWords.forEach((w, i) => {
-      const status = !w.isValid && w.alreadyUsed ? 'ALREADY USED ✗' :
-                    !w.isValid ? 'INVALID ✗' :
-                    i === 0 ? 'VALID ✓ ← LONGEST' :
-                    'VALID ✓';
-      console.log(`[SUBMIT] ${i + 1}. "${w.word}" (${w.length} letters) ${status}`);
-    });
-    console.log('[SUBMIT] =======================================');
-
-    if (!result.longestValid) {
-      console.log('[SUBMIT] ✗ No valid words found');
-      statusMessage.value = 'No valid words! All combinations are either invalid or already used.';
-      isValidating.value = false;
-      return;
-    }
-
-    const longestWord = result.longestValid;
-    const longestLength = longestWord.length;
-
-    console.log(`[SUBMIT] ✓ Scoring word: "${longestWord}" (${longestLength} letters)`);
-
-    // Add score
-    game.players.value[game.currentPlayerIndex.value]!.score += longestLength;
-    console.log(`[SUBMIT] New score: ${game.players.value[game.currentPlayerIndex.value]!.score}`);
-
-    // Mark words as used
-    result.validWords.forEach(w => {
-      if (w.isValid) {
-        game.usedWords.value.push(w.word.toUpperCase());
-        console.log(`[SUBMIT] Marked "${w.word}" as used`);
-      }
-    });
-    console.log(`[SUBMIT] Total words used: ${game.usedWords.value.length}`);
-
-    // Commit letters to board
-    game.commitTempLetters();
-
-    // Show message with other words found
-    const otherValidWords = result.validWords
-      .filter(w => w.isValid && w.word !== longestWord)
-      .slice(0, 3)
-      .map(w => w.word);
-    
-    const otherWordsText = otherValidWords.length > 0 
-      ? ` (also found: ${otherValidWords.join(', ')}${result.validWords.filter(w => w.isValid).length > 4 ? '...' : ''})`
-      : '';
-    
-    statusMessage.value = `+${longestLength} points for "${longestWord}"!${otherWordsText}`;
-
-    // Next player
-    game.currentPlayerIndex.value = (game.currentPlayerIndex.value + 1) % game.players.value.length;
-    console.log(`[SUBMIT] Next player: ${game.players.value[game.currentPlayerIndex.value]!.name}`);
-
-    if (game.currentPlayerIndex.value === 0) {
-      game.currentRound.value++;
-      console.log(`[SUBMIT] Round ${game.currentRound.value} starting`);
-    }
-
-    console.log('[SUBMIT] ========== TURN COMPLETE ==========');
-
-    setTimeout(() => statusMessage.value = '', 5000);
-  } catch (err) {
-    console.error('[SUBMIT] ✗ Validation error:', err);
-    statusMessage.value = 'Error validating words';
-  } finally {
-    isValidating.value = false;
-  }
-};
-
-const resetGame = () => {
-  console.log('[APP] Resetting game');
-  gameState.value = 'menu';
-  roomCode.value = '';
-  statusMessage.value = '';
-  game.board.value = [];
-  game.currentRound.value = 1;
-  game.currentPlayerIndex.value = 0;
-  game.usedWords.value = [];
-  game.players.value.forEach((p: Player) => p.score = 0);
+const navigateToGame = (route: string) => {
+  navigateTo(route);
 };
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+</style>
