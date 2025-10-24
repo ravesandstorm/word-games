@@ -109,6 +109,8 @@ const keyboardLayout = [
 // Initialize game on mount
 onMounted(async () => {
   await game.initializeGame();
+  const status = await $fetch('/api/status');
+  console.log('[WORDLE] Server status:', status);
 });
 
 // Display guesses (filled + current + empty)

@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player, Position } from '../../../types/game';
+import type { Player, Position, WordValidationResponse } from '../../../types/game';
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
@@ -307,7 +307,7 @@ const submitTurn = async () => {
     console.log(`[SUBMIT] Validating ${words.length} word combinations...`);
     
     // Validate all words at once
-    const result = await validation.validateWordsOnServer(words, game.usedWords.value);
+    const result = await validation.validateWordsOnServer(words, game.usedWords.value) as WordValidationResponse;
 
     console.log('[SUBMIT] ========== VALIDATION RESULTS ==========');
     result.validWords.forEach((w, i) => {

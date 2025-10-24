@@ -30,7 +30,7 @@ export function useWordle() {
   const getRandomWord = async (): Promise<string> => {
     try {
       // Fetch dictionary
-      const response = await fetch('/dictionary.json');
+      const response = await fetch('/wordleDict.json');
       const words: string[] = await response.json();
       
       // Filter for 5-letter words
@@ -38,7 +38,7 @@ export function useWordle() {
       
       if (fiveLetterWords.length === 0) {
         console.error('[WORDLE] No 5-letter words found in dictionary');
-        return 'HELLO'; // Fallback
+        return 'START'; // Fallback
       }
       
       const randomIndex = Math.floor(Math.random() * fiveLetterWords.length);
@@ -112,10 +112,10 @@ export function useWordle() {
     try {
       const result = await $fetch('/api/validate-words', {
         method: 'POST',
-        body: { words: [currentGuess.value], usedWords: [] }
+        body: { words: [currentGuess.value], wordle: true }
       });
 
-      if (!result.validWords[0]?.isValid) {
+      if (!result) {
         console.log('[WORDLE] Invalid word');
         return false;
       }

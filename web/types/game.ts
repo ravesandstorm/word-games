@@ -33,6 +33,7 @@ export interface Room {
 export interface WordValidationRequest {
   words: string[];
   usedWords: string[];
+  wordle: boolean;
 }
 
 export interface WordValidationResponse {

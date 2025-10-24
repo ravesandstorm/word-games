@@ -190,7 +190,7 @@ export function useWordValidation() {
     try {
       const response = await $fetch("/api/validate-words", {
         method: "POST",
-        body: { words, usedWords },
+        body: { words, usedWords, wordle: false },
       });
 
       console.log("[VALIDATION] ✓ Server validation complete");
