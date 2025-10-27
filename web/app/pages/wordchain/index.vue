@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import type { Player, Position, WordValidationResponse } from '../../../types/game';
+import type { DefaultServerStatus } from '../../../types/index';
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
@@ -76,7 +77,7 @@ const currentPlayerId = ref('player-' + Date.now());
 onMounted(async () => {
   console.log('[APP] Component mounted, checking server status...');
   try {
-    const status = await $fetch('/api/status');
+    const status = await $fetch('/api/status', { params: { origin: 'wordchain' } }) as DefaultServerStatus;
     mongoAvailable.value = status.mongoAvailable;
     dictionarySize.value = status.dictionarySize;
     console.log('[APP] ✓ Server status:', status); 

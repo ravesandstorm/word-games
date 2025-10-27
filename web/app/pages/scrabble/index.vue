@@ -267,6 +267,8 @@
 
 <script setup lang="ts">
 import type { ScrabblePlayer } from '../../../types/scrabble';
+import type { WordValidationResponse } from '../../../types/game';
+import type { DefaultServerStatus } from '../../../types/index';
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
@@ -287,7 +289,7 @@ const currentPlayerId = ref('player-' + Date.now());
 onMounted(async () => {
   console.log('[SCRABBLE] Component mounted, checking server status...');
   try {
-    const status = await $fetch('/api/status');
+    const status = await $fetch('/api/status', { params: { origin: 'scrabble' } }) as DefaultServerStatus;
     mongoAvailable.value = status.mongoAvailable;
     dictionarySize.value = status.dictionarySize;
     console.log('[SCRABBLE] ✓ Server status:', status);
@@ -502,7 +504,7 @@ const submitTurn = async () => {
     console.log(`[SCRABBLE] Validating ${words.length} word combinations...`);
 
     // Validate all words at once
-    const result = await validation.validateWordsOnServer(words, game.usedWords.value);
+    const result = await validation.validateWordsOnServer(words, game.usedWords.value) as WordValidationResponse;
 
     if (!result.longestValid) {
       console.log('[SCRABBLE] ✗ No valid words found');

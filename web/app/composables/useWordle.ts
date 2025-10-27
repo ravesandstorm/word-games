@@ -26,11 +26,58 @@ export function useWordle() {
     }
   };
 
-  // Get a random 5-letter word from dictionary
+  // Get a random 5-letter word from starters dictionary
   const getRandomWord = async (): Promise<string> => {
     try {
-      // Fetch dictionary
-      const response = await fetch('/wordleDict.json');
+      // code to pull past words directly from archive website
+
+      // const myHeaders = new Headers();
+      // myHeaders.append("Priority", "u=0, i");
+      // myHeaders.append("upgrade-insecure-requests", "1");
+      // myHeaders.append("sec-ch-ua", "\"Google Chrome\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\"");
+      // myHeaders.append("sec-ch-ua-mobile", "?1");
+      // myHeaders.append("sec-ch-ua-platform", "\"Android\"");
+      // myHeaders.append("sec-fetch-dest", "document");
+      // myHeaders.append("sec-fetch-mode", "navigate");
+      // myHeaders.append("sec-fetch-site", "none");
+      // myHeaders.append("sec-fetch-user", "?1");
+
+      // const requestOptions = {
+      //   method: "GET",
+      //   headers: myHeaders,
+      //   redirect: "follow"
+      // };
+
+      // const pageData = await fetch(`https://www.fiveforks.com/wordle/`, requestOptions)
+      //   .then((response) => response.text())
+      //   .then((result) => console.log(result))
+      //   .catch((error) => console.error(error));
+
+      // const mainStart = `<div id="alphalist">`
+      // const mainEnd = `<div id="chronlist">`
+
+      // const beforeArr = pageData
+      //     .split(mainStart)[1]
+      //     .split(mainEnd)[0]
+      //     .split('<br />\n')
+          
+      // const clean = s => s
+      //   .replace(/<[^>]*>/g, ' ')   // remove tags -> spaces
+      //   .replace(/&nbsp;/g, ' ')    // convert non-breaking spaces
+      //   .replace(/\s+/g, ' ')       // collapse whitespace
+      //   .trim();
+
+      // const arr = beforeArr
+      //   .map(clean)
+      //   .map(s => {
+      //     const m = s.match(/\b([A-Z]{2,})\b/); // words of 2+ uppercase letters
+      //     return m ? m[1] : null;
+      //   })
+      //   .filter(Boolean);
+      // console.log('Ending with array length:', arr.length);
+
+      // Fetch from starters dictionary
+      const response = await fetch('/wordleStarters.json');
       const words: string[] = await response.json();
       
       // Filter for 5-letter words
@@ -44,7 +91,7 @@ export function useWordle() {
       const randomIndex = Math.floor(Math.random() * fiveLetterWords.length);
       const word = fiveLetterWords[randomIndex]!.toUpperCase();
       
-      console.log(`[WORDLE] Selected word: ${word}`);
+      // console.log(`[WORDLE] Selected word: ${word}`); // unsafe to display on frontend
       return word;
     } catch (err) {
       console.error('[WORDLE] Error loading dictionary:', err);

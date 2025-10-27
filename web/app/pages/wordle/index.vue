@@ -97,6 +97,8 @@
 </template>
 
 <script setup lang="ts">
+import type { WordleServerStatus } from '../../../types/index';
+
 const game = useWordle();
 const message = ref('');
 
@@ -109,7 +111,8 @@ const keyboardLayout = [
 // Initialize game on mount
 onMounted(async () => {
   await game.initializeGame();
-  const status = await $fetch('/api/status');
+  // send request param with origin
+  const status = await $fetch('/api/status', { params: { origin: 'wordle' } }) as WordleServerStatus;
   console.log('[WORDLE] Server status:', status);
 });
 
