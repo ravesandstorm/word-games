@@ -2,6 +2,8 @@
 
 This repo contains a collection of word games built with Nuxt 4, Vue 3, TypeScript, Tailwind CSS, and Socket.IO.
 
+## [Live Demo](https://word-games-rave.onrender.com)
+
 ## Multiplayer Games
 - Scrabble
 - A custom Scrabble-like game called **Word Chain**
