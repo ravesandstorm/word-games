@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "build:serverless": "nuxt build --preset vercel",
     "dev": "nuxt dev --host 0.0.0.0 --port 3003",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
