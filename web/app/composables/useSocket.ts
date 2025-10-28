@@ -14,36 +14,62 @@ export function useSocket() {
     }
 
     const config = useRuntimeConfig();
-    const socketUrl = config.public.apiBase || 'http://localhost:3000';
+    // Use window.location.origin in browser to get the current host
+    const socketUrl = process.client 
+      ? window.location.origin 
+      : (config.public.apiBase || 'http://localhost:3000');
     
     console.log(`[SOCKET] Connecting to ${socketUrl}...`);
+    
     socket.value = io(socketUrl, {
-      transports: ['websocket', 'polling']
+      path: '/socket.io/',  // CRITICAL: Must match backend path
+      transports: ['polling', 'websocket'],  // Try polling first, then upgrade
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      timeout: 10000
     });
 
     socket.value.on('connect', () => {
-      console.log('[SOCKET] ✓ Connected');
+      console.log('[SOCKET] ✓✓✓ CONNECTED ✓✓✓');
+      console.log('[SOCKET] ID:', socket.value?.id);
+      console.log('[SOCKET] Transport:', socket.value?.io.engine.transport.name);
       isConnected.value = true;
     });
 
-    socket.value.on('disconnect', () => {
-      console.log('[SOCKET] ✗ Disconnected');
+    socket.value.on('connected', (data) => {
+      console.log('[SOCKET] ✓ Welcome message received:', data);
+    });
+
+    socket.value.on('disconnect', (reason) => {
+      console.log('[SOCKET] ✗ Disconnected:', reason);
       isConnected.value = false;
     });
 
+    socket.value.on('connect_error', (error) => {
+      console.error('[SOCKET] ✗✗✗ Connection error:', error);
+      console.error('[SOCKET] Error message:', error.message);
+    });
+
     socket.value.on('room-updated', (data: { players: Player[]; gameState: GameState }) => {
-      console.log('[SOCKET] Room updated:', data);
+      console.log('[SOCKET] ✓ Room updated:', data);
       roomPlayers.value = data.players;
       gameState.value = data.gameState;
     });
 
     socket.value.on('game-state-updated', (data: { gameState: GameState }) => {
-      console.log('[SOCKET] Game state updated:', data);
+      console.log('[SOCKET] ✓ Game state updated:', data);
       gameState.value = data.gameState;
     });
 
-    socket.value.on('error', (data: { message: string }) => {
-      console.error('[SOCKET] Error:', data.message);
+    socket.value.on('error', (data: { message: string; details?: string }) => {
+      console.error('[SOCKET] ✗ Server error:', data.message);
+      if (data.details) console.error('[SOCKET] Details:', data.details);
+    });
+
+    // Log all events for debugging
+    socket.value.onAny((eventName, ...args) => {
+      console.log(`[SOCKET] Event "${eventName}":`, args);
     });
   };
 
@@ -58,35 +84,34 @@ export function useSocket() {
 
   const joinRoom = (roomCode: string, playerId: string, playerName: string) => {
     if (!socket.value?.connected) {
-      console.error('[SOCKET] Not connected');
+      console.error('[SOCKET] ✗ Cannot join room: Not connected');
       return;
     }
 
-    console.log(`[SOCKET] Joining room ${roomCode} as ${playerName}`);
+    console.log(`[SOCKET] >>> Emitting join-room: ${roomCode} as ${playerName}`);
     socket.value.emit('join-room', { roomCode, playerId, playerName });
   };
 
   const leaveRoom = (roomCode: string, playerId: string) => {
     if (!socket.value?.connected) {
-      console.error('[SOCKET] Not connected');
+      console.error('[SOCKET] ✗ Cannot leave room: Not connected');
       return;
     }
 
-    console.log(`[SOCKET] Leaving room ${roomCode}`);
+    console.log(`[SOCKET] >>> Emitting leave-room: ${roomCode}`);
     socket.value.emit('leave-room', { roomCode, playerId });
   };
 
   const updateGameState = (roomCode: string, newGameState: Partial<GameState>) => {
     if (!socket.value?.connected) {
-      console.error('[SOCKET] Not connected');
+      console.error('[SOCKET] ✗ Cannot update: Not connected');
       return;
     }
 
-    console.log(`[SOCKET] Updating game state for room ${roomCode}`);
+    console.log(`[SOCKET] >>> Emitting update-game-state: ${roomCode}`);
     socket.value.emit('update-game-state', { roomCode, gameState: newGameState });
   };
 
-  // Cleanup on unmount
   onUnmounted(() => {
     disconnect();
   });
@@ -103,4 +128,3 @@ export function useSocket() {
     updateGameState
   };
 }
-
