@@ -14,7 +14,7 @@ export default defineNuxtConfig({
       websocket: true
     }
   },
-
+  ssr: true,
   app: {
     head: {
       title: 'Word Chain Game',
