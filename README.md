@@ -42,10 +42,8 @@ npm i
 # use scripts or node server directly
 npm run build:vercel
 npm run dev:vercel
-# or use multi terminal
+# or for only backend
 node .vercel/output/functions/__fallback.func/index.mjs
-# and
-serve .vercel/output/static on port 3000
 ```
 
 ### Stashed Vercel Framework Settings
