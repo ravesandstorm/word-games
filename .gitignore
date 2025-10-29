@@ -18,6 +18,7 @@ logs
 .fleet
 .idea
 .vscode
+.vercel
 
 # Local env files
 .env
