@@ -32,7 +32,26 @@ npm run dev
 cd web
 npm i
 npm run build
-npm run start
+node .output/server/index.mjs
 ```
+
+4. Vercel Mode
+```bash
+cd web
+npm i
+# use scripts or node server directly
+npm run build:vercel
+npm run dev:vercel
+# or use multi terminal
+node .vercel/output/functions/__fallback.func/index.mjs
+# and
+serve .vercel/output/static on port 3000
+```
+
+### Stashed Vercel Framework Settings
+Build Command: npm run build:vercel
+Output Directory: .vercel/output
+Install Command: npm install
+Development Command: npm run dev:vercel
 
 Open the frontend at http://localhost:3000
