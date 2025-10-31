@@ -1,5 +1,15 @@
 <template>
   <div>
+    <!-- Confirmation Modal -->
+    <ConfirmModal
+      :show="showExitConfirm"
+      title="Exit Game?"
+      message="Are you sure you want to exit? Your current game progress will be lost."
+      confirm-text="Exit"
+      @confirm="confirmExit"
+      @cancel="showExitConfirm = false"
+    />
+
     <MainMenu
       v-if="gameState === 'menu'"
       :mongo-available="mongoAvailable"
@@ -18,6 +28,7 @@
       :message="statusMessage"
       :lobby-player-count="socket.roomPlayers.value.length"
       :lobby-players="socket.roomPlayers.value"
+      :is-host="isHost"
       @create-room="createRoom"
       @join-room="joinRoom"
       @copy-code="copyRoomCode"
@@ -47,6 +58,7 @@
       @clear-letters="game.clearTempLetters"
       @submit-turn="submitTurn"
       @reset="resetGame"
+      @home="handleHomeClick"
     />
   </div>
 </template>
@@ -63,6 +75,7 @@ const roomCode = ref('');
 const isCreatingRoom = ref(false);
 const statusMessage = ref('');
 const isValidating = ref(false);
+const showExitConfirm = ref(false);
 
 const boardSize = ref(15);
 const maxLettersPerTurn = ref(3);
@@ -72,6 +85,13 @@ const game = useGame();
 const validation = useWordValidation();
 const socket = useSocket();
 const currentPlayerId = ref('player-' + Date.now());
+const hostId = ref<string | null>(null);
+
+// Computed property to check if current player is host
+const isHost = computed(() => {
+  if (!isOnlineMode.value || !roomCode.value) return true; // Local mode, always host
+  return hostId.value === currentPlayerId.value;
+});
 
 // Check server status on mount
 onMounted(async () => {
@@ -158,6 +178,7 @@ const createRoom = async () => {
     });
 
     roomCode.value = result.roomCode;
+    hostId.value = currentPlayerId.value; // Set as host
     statusMessage.value = `Room created: ${result.roomCode}`;
     console.log(`[ROOM] ✓ Created: ${result.roomCode}`);
 
@@ -240,6 +261,26 @@ const backToMenu = () => {
   gameState.value = 'menu';
   roomCode.value = '';
   statusMessage.value = '';
+};
+
+// Handle home button click
+const handleHomeClick = () => {
+  // Show confirmation if game is in progress
+  if (gameState.value === 'playing') {
+    showExitConfirm.value = true;
+  } else {
+    navigateTo('/');
+  }
+};
+
+// Confirm exit
+const confirmExit = () => {
+  showExitConfirm.value = false;
+  if (isOnlineMode.value && roomCode.value) {
+    socket.leaveRoom(roomCode.value, currentPlayerId.value);
+    socket.disconnect();
+  }
+  navigateTo('/');
 };
 
 const handleCellClick = (row: number, col: number) => {

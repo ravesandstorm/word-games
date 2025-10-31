@@ -127,24 +127,32 @@ export function useScrabble() {
     }
 
     const tile = player.tiles[tileIndex]!;
-    
-    // Remove from temp positions if already placed
-    if (cell.isTemp) {
+
+    // If there's already a temp letter, return it to the player's hand
+    if (cell.isTemp && cell.letter) {
+      console.log(`[SCRABBLE] Returning existing temp letter "${cell.letter}" to hand`);
+      player.tiles.push({
+        letter: cell.letter,
+        score: letterScores[cell.letter] || 0,
+        isBlank: cell.letter === ''
+      });
+
+      // Remove from temp positions
       tempPositions.value = tempPositions.value.filter(
         p => p.row !== position.row || p.col !== position.col
       );
     }
 
     console.log(`[SCRABBLE] Placing "${tile.letter}" at [${position.row}, ${position.col}]`);
-    board.value[position.row]![position.col] = { 
-      letter: tile.letter, 
-      isTemp: true, 
+    board.value[position.row]![position.col] = {
+      letter: tile.letter,
+      isTemp: true,
       isPermanent: false,
       multiplier: cell.multiplier
     };
-    
+
     tempPositions.value.push({ ...position });
-    
+
     // Remove tile from player's hand
     player.tiles.splice(tileIndex, 1);
     selectedTileIndex.value = null;
@@ -231,6 +239,92 @@ export function useScrabble() {
     return wordScore;
   };
 
+  // Place a letter from keyboard (if it exists in player's hand)
+  const placeLetterFromKeyboard = (letter: string, position: Position): boolean => {
+    const player = players.value[currentPlayerIndex.value];
+    if (!player) return false;
+
+    const cell = board.value[position.row]![position.col];
+    if (!cell || cell.isPermanent) {
+      console.log('[SCRABBLE] ✗ Cannot place letter on permanent cell');
+      return false;
+    }
+
+    // Find the letter in player's hand
+    const tileIndex = player.tiles.findIndex(t => t.letter === letter.toUpperCase());
+    if (tileIndex === -1) {
+      console.log(`[SCRABBLE] ✗ Letter "${letter}" not in hand`);
+      return false;
+    }
+
+    // If there's already a temp letter at this position, return it to hand
+    if (cell.isTemp && cell.letter) {
+      console.log(`[SCRABBLE] Returning existing temp letter "${cell.letter}" to hand`);
+      player.tiles.push({
+        letter: cell.letter,
+        score: letterScores[cell.letter] || 0,
+        isBlank: cell.letter === ''
+      });
+
+      // Remove from temp positions
+      tempPositions.value = tempPositions.value.filter(
+        p => p.row !== position.row || p.col !== position.col
+      );
+    }
+
+    const tile = player.tiles[tileIndex]!;
+    console.log(`[SCRABBLE] Placing "${tile.letter}" at [${position.row}, ${position.col}] via keyboard`);
+
+    board.value[position.row]![position.col] = {
+      letter: tile.letter,
+      isTemp: true,
+      isPermanent: false,
+      multiplier: cell.multiplier
+    };
+
+    tempPositions.value.push({ ...position });
+
+    // Remove tile from player's hand
+    player.tiles.splice(tileIndex, 1);
+
+    return true;
+  };
+
+  // Remove letter at position (for backspace)
+  const removeLetterAtPosition = (position: Position): boolean => {
+    const cell = board.value[position.row]![position.col];
+    if (!cell || !cell.isTemp) {
+      console.log('[SCRABBLE] ✗ No temp letter to remove');
+      return false;
+    }
+
+    const player = players.value[currentPlayerIndex.value];
+    if (!player) return false;
+
+    // Return letter to hand
+    player.tiles.push({
+      letter: cell.letter,
+      score: letterScores[cell.letter] || 0,
+      isBlank: cell.letter === ''
+    });
+
+    // Clear the cell
+    board.value[position.row]![position.col] = {
+      letter: '',
+      isTemp: false,
+      isPermanent: false,
+      multiplier: cell.multiplier
+    };
+
+    // Remove from temp positions
+    tempPositions.value = tempPositions.value.filter(
+      p => p.row !== position.row || p.col !== position.col
+    );
+
+    console.log(`[SCRABBLE] Removed temp letter at [${position.row}, ${position.col}]`);
+    return true;
+  };
+
   return {
     board,
     players,
@@ -248,7 +342,9 @@ export function useScrabble() {
     placeTile,
     clearTempLetters,
     commitTempLetters,
-    calculateWordScore
+    calculateWordScore,
+    placeLetterFromKeyboard,
+    removeLetterAtPosition
   };
 }
 

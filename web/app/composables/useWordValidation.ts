@@ -3,7 +3,8 @@ import type { Cell, Position } from "../../types/game";
 export function useWordValidation() {
   const extractWordsFromBoard = (
     board: Cell[][],
-    tempPositions: Position[]
+    tempPositions: Position[],
+    allowFirstWord: boolean = false
   ): string[] => {
     if (board === undefined) {
       console.log("[WORD-EXTRACTION] ✗ Board or temp positions undefined");
@@ -93,13 +94,15 @@ export function useWordValidation() {
 
           if (!hasAllTemp) continue;
 
-          // Check: must include at least one permanent letter
+          // Check: must include at least one permanent letter (unless it's the first word)
           const hasPermanent = segment.some((cell) => cell.isPermanent);
-          if (!hasPermanent) continue;
+          if (!hasPermanent && !allowFirstWord) continue;
 
           // Build the word
           const word = segment.map((cell) => cell.letter).join("");
-          words.add(word);
+          if (word.length >= 2) { // Only add words with 2+ letters
+            words.add(word);
+          }
         }
       }
     } else {
@@ -157,13 +160,15 @@ export function useWordValidation() {
           const hasAllTemp = tempIndices.every(i => i >= start && i < end);
           if (!hasAllTemp) continue;
 
-          // Must include at least one permanent letter
+          // Must include at least one permanent letter (unless it's the first word)
           const hasPermanent = segment.some((cell) => cell.isPermanent);
-          if (!hasPermanent) continue;
+          if (!hasPermanent && !allowFirstWord) continue;
 
           // Build word
           const word = segment.map(cell => cell.letter).join("");
-          words.add(word);
+          if (word.length >= 2) { // Only add words with 2+ letters
+            words.add(word);
+          }
         }
       }
     }

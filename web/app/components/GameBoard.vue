@@ -4,12 +4,20 @@
       <!-- Game Header -->
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4">
         <div class="flex justify-between items-center mb-4">
-          <div>
-            <h2 class="text-2xl font-bold text-white">Round {{ currentRound }}</h2>
-            <p class="text-yellow-300 font-semibold text-lg">
-              {{ currentPlayer?.name }}'s Turn
-            </p>
-            <p v-if="roomCode" class="text-purple-300 text-sm">Room: {{ roomCode }}</p>
+          <div class="flex items-center gap-4">
+            <button
+              @click="$emit('home')"
+              class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all"
+            >
+              ← Home
+            </button>
+            <div>
+              <h2 class="text-2xl font-bold text-white">Round {{ currentRound }}</h2>
+              <p class="text-yellow-300 font-semibold text-lg">
+                {{ currentPlayer?.name }}'s Turn
+              </p>
+              <p v-if="roomCode" class="text-purple-300 text-sm">Room: {{ roomCode }}</p>
+            </div>
           </div>
           <button
             @click="$emit('reset')"
@@ -136,6 +144,7 @@ defineEmits<{
   'clear-letters': [];
   'submit-turn': [];
   'reset': [];
+  'home': [];
 }>();
 
 const currentPlayer = computed(() => props.players[props.currentPlayerIndex]);

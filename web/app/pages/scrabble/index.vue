@@ -1,5 +1,15 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-green-900 via-teal-900 to-blue-900">
+    <!-- Confirmation Modal -->
+    <ConfirmModal
+      :show="showExitConfirm"
+      title="Exit Game?"
+      message="Are you sure you want to exit? Your current game progress will be lost."
+      confirm-text="Exit"
+      @confirm="confirmExit"
+      @cancel="showExitConfirm = false"
+    />
+
     <!-- Main Menu -->
     <div v-if="gameState === 'menu'" class="min-h-screen flex items-center justify-center p-4">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl">
@@ -107,7 +117,11 @@
             <button
               v-if="!isOnlineMode && game.players.value.length < 3"
               @click="addPlayer"
-              class="bg-green-500 hover:bg-green-600 text-white rounded-lg px-3 py-1"
+              :disabled="!isHost"
+              :class="[
+                'text-white rounded-lg px-3 py-1',
+                !isHost ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+              ]"
             >
               Add Player
             </button>
@@ -119,12 +133,20 @@
                 :value="player.name"
                 @input="updatePlayerName(index, ($event.target as HTMLInputElement).value)"
                 type="text"
-                class="flex-1 bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
+                :disabled="!isHost"
+                :class="[
+                  'flex-1 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
+                  !isHost ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+                ]"
               />
               <button
                 v-if="!isOnlineMode && game.players.value.length > 1"
                 @click="removePlayer(index)"
-                class="bg-red-500 hover:bg-red-600 text-white rounded-lg px-3 py-2"
+                :disabled="!isHost"
+                :class="[
+                  'text-white rounded-lg px-3 py-2',
+                  !isHost ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
+                ]"
               >
                 Remove
               </button>
@@ -142,9 +164,13 @@
           </button>
           <button
             @click="startGame"
-            class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl"
+            :disabled="!isHost"
+            :class="[
+              'flex-1 text-white font-bold py-3 rounded-xl',
+              !isHost ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+            ]"
           >
-            Start Game
+            {{ !isHost ? 'Waiting for Host...' : 'Start Game' }}
           </button>
         </div>
 
@@ -158,11 +184,19 @@
         <!-- Game Header -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4">
           <div class="flex justify-between items-center">
-            <div>
-              <h2 class="text-2xl font-bold text-white">Round {{ game.currentRound.value }}</h2>
-              <p class="text-yellow-300 font-semibold text-lg">
-                {{ currentPlayer?.name }}'s Turn
-              </p>
+            <div class="flex items-center gap-4">
+              <button
+                @click="handleHomeClick"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all"
+              >
+                ← Home
+              </button>
+              <div>
+                <h2 class="text-2xl font-bold text-white">Round {{ game.currentRound.value }}</h2>
+                <p class="text-yellow-300 font-semibold text-lg">
+                  {{ currentPlayer?.name }}'s Turn
+                </p>
+              </div>
             </div>
             <button
               @click="resetGame"
@@ -235,7 +269,7 @@
 
               <button
                 @click="drawTileForCurrentPlayer"
-                :disabled="currentPlayer && currentPlayer.tiles.length >= 7"
+                :disabled="(currentPlayer && currentPlayer.tiles.length >= 7) || game.tempPositions.value.length > 0"
                 class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg mb-2"
               >
                 Draw Tile ({{ game.letterBag.value.length }} left)
@@ -279,11 +313,19 @@ const isCreatingRoom = ref(false);
 const statusMessage = ref('');
 const isValidating = ref(false);
 const joinCode = ref('');
+const showExitConfirm = ref(false);
 
 const game = useScrabble();
 const validation = useWordValidation();
 const socket = useSocket();
 const currentPlayerId = ref('player-' + Date.now());
+const hostId = ref<string | null>(null);
+
+// Computed property to check if current player is host
+const isHost = computed(() => {
+  if (!isOnlineMode.value || !roomCode.value) return true; // Local mode, always host
+  return hostId.value === currentPlayerId.value;
+});
 
 // Check server status on mount
 onMounted(async () => {
@@ -298,6 +340,48 @@ onMounted(async () => {
     mongoAvailable.value = false;
   }
 });
+
+// Keyboard controls
+onMounted(() => {
+  const handleKeyPress = (e: KeyboardEvent) => {
+    if (gameState.value !== 'playing' || !game.selectedCell.value) return;
+
+    const key = e.key.toUpperCase();
+
+    if (key === 'ARROWUP' || key === 'ARROWDOWN' || key === 'ARROWLEFT' || key === 'ARROWRIGHT') {
+      e.preventDefault();
+      moveSelection(key);
+    } else if (key === 'BACKSPACE') {
+      e.preventDefault();
+      game.removeLetterAtPosition(game.selectedCell.value);
+    } else if (key.length === 1 && key.match(/[A-Z]/)) {
+      e.preventDefault();
+      game.placeLetterFromKeyboard(key, game.selectedCell.value);
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyPress);
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyPress);
+  });
+});
+
+const moveSelection = (direction: string) => {
+  if (!game.selectedCell.value) return;
+
+  let newRow = game.selectedCell.value.row;
+  let newCol = game.selectedCell.value.col;
+
+  switch (direction) {
+    case 'ARROWUP': newRow = Math.max(0, newRow - 1); break;
+    case 'ARROWDOWN': newRow = Math.min(14, newRow + 1); break;
+    case 'ARROWLEFT': newCol = Math.max(0, newCol - 1); break;
+    case 'ARROWRIGHT': newCol = Math.min(14, newCol + 1); break;
+  }
+
+  game.selectedCell.value = { row: newRow, col: newCol };
+};
 
 const currentPlayer = computed(() => game.players.value[game.currentPlayerIndex.value] as ScrabblePlayer | undefined);
 
@@ -361,6 +445,7 @@ const createRoom = async () => {
     });
 
     roomCode.value = result.roomCode;
+    hostId.value = currentPlayerId.value; // Set as host
     statusMessage.value = `Room created: ${result.roomCode}`;
     console.log(`[SCRABBLE] ✓ Created: ${result.roomCode}`);
 
@@ -450,6 +535,26 @@ const backToMenu = () => {
   statusMessage.value = '';
 };
 
+// Handle home button click
+const handleHomeClick = () => {
+  // Show confirmation if game is in progress
+  if (gameState.value === 'playing') {
+    showExitConfirm.value = true;
+  } else {
+    navigateTo('/');
+  }
+};
+
+// Confirm exit
+const confirmExit = () => {
+  showExitConfirm.value = false;
+  if (isOnlineMode.value && roomCode.value) {
+    socket.leaveRoom(roomCode.value, currentPlayerId.value);
+    socket.disconnect();
+  }
+  navigateTo('/');
+};
+
 const handleCellClick = (row: number, col: number) => {
   console.log(`[SCRABBLE] Cell clicked: [${row}, ${col}]`);
   game.selectedCell.value = { row, col };
@@ -469,8 +574,15 @@ const drawTileForCurrentPlayer = () => {
   const player = currentPlayer.value;
   if (!player) return;
 
+  if (game.tempPositions.value.length > 0) {
+    statusMessage.value = 'Submit your turn before drawing more tiles!';
+    setTimeout(() => statusMessage.value = '', 2000);
+    return;
+  }
+
   if (player.tiles.length >= 7) {
     statusMessage.value = 'You already have 7 tiles!';
+    setTimeout(() => statusMessage.value = '', 2000);
     return;
   }
 
@@ -491,8 +603,14 @@ const submitTurn = async () => {
   statusMessage.value = 'Validating words...';
 
   try {
+    // Check if this is the first word (no permanent letters on board)
+    const hasPermanentLetters = game.board.value.some(row =>
+      row.some(cell => cell.isPermanent)
+    );
+    const isFirstWord = !hasPermanentLetters;
+
     // Extract all possible words from board
-    const words = validation.extractWordsFromBoard(game.board.value, game.tempPositions.value);
+    const words = validation.extractWordsFromBoard(game.board.value, game.tempPositions.value, isFirstWord);
 
     if (words.length === 0) {
       console.log('[SCRABBLE] ✗ No valid word sequences found');

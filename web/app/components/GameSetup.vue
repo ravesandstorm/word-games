@@ -73,29 +73,41 @@
           <input
             v-model.number="settings.boardSize"
             type="number"
-            class="w-full bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
+            :disabled="controlsDisabled"
+            :class="[
+              'w-full text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
+              controlsDisabled ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+            ]"
             min="10"
             max="20"
           />
         </div>
-        
+
         <div>
           <label class="text-white font-semibold mb-2 block">Starting Letters Per Turn</label>
           <input
             v-model.number="settings.maxLettersPerTurn"
             type="number"
-            class="w-full bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
+            :disabled="controlsDisabled"
+            :class="[
+              'w-full text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
+              controlsDisabled ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+            ]"
             min="2"
             max="6"
           />
         </div>
-        
+
         <div>
           <label class="text-white font-semibold mb-2 block">Rounds Before Increment</label>
           <input
             v-model.number="settings.roundsPerIncrement"
             type="number"
-            class="w-full bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
+            :disabled="controlsDisabled"
+            :class="[
+              'w-full text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
+              controlsDisabled ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+            ]"
             min="1"
             max="10"
           />
@@ -107,7 +119,11 @@
             <label class="text-white font-semibold">Players (Local Device)</label>
             <button
               @click="$emit('add-player')"
-              class="bg-green-500 hover:bg-green-600 text-white rounded-lg px-3 py-1 flex items-center gap-1"
+              :disabled="controlsDisabled"
+              :class="[
+                'text-white rounded-lg px-3 py-1 flex items-center gap-1',
+                controlsDisabled ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+              ]"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -115,19 +131,27 @@
               Add
             </button>
           </div>
-          
+
           <div class="space-y-2">
             <div v-for="(player, index) in players" :key="index" class="flex gap-2">
               <input
                 :value="player.name"
                 @input="$emit('update-player', index, ($event.target as HTMLInputElement).value)"
                 type="text"
-                class="flex-1 bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400"
+                :disabled="controlsDisabled"
+                :class="[
+                  'flex-1 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
+                  controlsDisabled ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+                ]"
               />
               <button
                 v-if="players.length > 1"
                 @click="$emit('remove-player', index)"
-                class="bg-red-500 hover:bg-red-600 text-white rounded-lg px-3 py-2"
+                :disabled="controlsDisabled"
+                :class="[
+                  'text-white rounded-lg px-3 py-2',
+                  controlsDisabled ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
+                ]"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -147,13 +171,17 @@
           </button>
           <button
             @click="$emit('start-game', settings)"
-            class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+            :disabled="controlsDisabled"
+            :class="[
+              'flex-1 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2',
+              controlsDisabled ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+            ]"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Start Game
+            {{ controlsDisabled ? 'Waiting for Host...' : 'Start Game' }}
           </button>
         </div>
       </div>
@@ -172,7 +200,7 @@ interface GameSettings {
   roundsPerIncrement: number;
 }
 
-defineProps<{
+const props = defineProps<{
   isOnline: boolean;
   roomCode?: string;
   isCreating?: boolean;
@@ -180,7 +208,11 @@ defineProps<{
   message?: string;
   lobbyPlayerCount: number | 0;
   lobbyPlayers: Player[];
+  isHost?: boolean;
 }>();
+
+// Determine if controls should be disabled (for non-hosts in online mode)
+const controlsDisabled = computed(() => props.isOnline && props.roomCode && !props.isHost);
 
 const settings = ref<GameSettings>({
   boardSize: 15,
