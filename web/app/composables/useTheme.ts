@@ -25,26 +25,29 @@ export function useTheme() {
   // Get gradient classes for theme
   const getGradientClass = computed(() => {
     const gradients: Record<Theme, string> = {
-      purple: 'from-purple-900 via-blue-900 to-indigo-900',
-      blue: 'from-blue-900 via-cyan-900 to-teal-900',
-      green: 'from-green-900 via-teal-900 to-emerald-900',
-      orange: 'from-orange-900 via-red-900 to-pink-900',
-      pink: 'from-pink-900 via-purple-900 to-indigo-900'
+      purple: "from-purple-900/85 via-indigo-950/80 to-violet-950/85",
+      blue: "from-blue-950/85 via-cyan-900/80 to-sky-950/85",
+      green: "from-emerald-950/85 via-teal-900/80 to-green-950/85",
+      orange: "from-amber-900/85 via-orange-950/80 to-rose-950/85",
+      pink: "from-pink-900/85 via-fuchsia-950/80 to-purple-950/85"
     };
     return gradients[currentTheme.value];
   });
 
   // Get accent color for theme
-  const getAccentColor = computed(() => {
-    const colors: Record<Theme, string> = {
-      purple: 'bg-purple-500 hover:bg-purple-600',
-      blue: 'bg-blue-500 hover:bg-blue-600',
-      green: 'bg-green-500 hover:bg-green-600',
-      orange: 'bg-orange-500 hover:bg-orange-600',
-      pink: 'bg-pink-500 hover:bg-pink-600'
-    };
-    return colors[currentTheme.value];
-  });
+const getAccentColor = computed(() => {
+  const colors: Record<Theme, string> = {
+    purple:
+      "bg-purple-600 hover:bg-violet-700 active:bg-purple-800 ring-2 ring-purple-400/30 hover:ring-purple-300/40",
+    blue: "bg-blue-600 hover:bg-sky-700 active:bg-blue-800 ring-2 ring-blue-400/30 hover:ring-blue-300/40",
+    green:
+      "bg-emerald-600 hover:bg-teal-700 active:bg-emerald-800 ring-2 ring-emerald-400/30 hover:ring-emerald-300/40",
+    orange:
+      "bg-amber-600 hover:bg-orange-700 active:bg-amber-800 ring-2 ring-amber-400/30 hover:ring-amber-300/40",
+    pink: "bg-pink-600 hover:bg-fuchsia-700 active:bg-pink-800 ring-2 ring-pink-400/30 hover:ring-pink-300/40"
+  };
+  return colors[currentTheme.value];
+});
 
   return {
     currentTheme,
@@ -53,4 +56,3 @@ export function useTheme() {
     getAccentColor
   };
 }
-

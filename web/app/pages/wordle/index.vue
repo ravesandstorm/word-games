@@ -43,7 +43,7 @@
           <div v-if="showWinAnimation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
             <div class="text-center animate-bounce-in">
               <div class="text-9xl mb-4 animate-spin-slow">🎉</div>
-              <h2 class="text-6xl font-bold text-yellow-400 mb-2 animate-pulse">Winner!</h2>
+              <h2 class="text-6xl font-bold text-yellow-400 mb-2 animate-pulse">You Won!</h2>
               <p class="text-2xl text-white">You guessed it in {{ game.guesses.value.length }} tries!</p>
             </div>
           </div>
@@ -300,8 +300,8 @@ const confirmExit = () => {
 <style scoped>
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
 }
 
 @keyframes flip {
@@ -335,7 +335,8 @@ const confirmExit = () => {
 }
 
 .animate-shake {
-  animation: shake 0.5s ease-in-out;
+  /* change intensity of shake */ 
+  animation: shake 0.5s ease-in-out ;
 }
 
 .animate-flip-0,
@@ -343,7 +344,7 @@ const confirmExit = () => {
 .animate-flip-2,
 .animate-flip-3,
 .animate-flip-4 {
-  animation: flip 0.6s ease-in-out;
+  animation: flip 0.8s ease-in-out;
   animation-fill-mode: forwards;
 }
 
