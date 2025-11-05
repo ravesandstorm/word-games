@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <ClickSpark>
+    <div>
     <!-- Confirmation Modal -->
     <ConfirmModal
       :show="showExitConfirm"
@@ -60,7 +61,8 @@
       @reset="resetGame"
       @home="handleHomeClick"
     />
-  </div>
+    </div>
+  </ClickSpark>
 </template>
 
 <script setup lang="ts">

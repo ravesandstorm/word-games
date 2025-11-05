@@ -1,5 +1,18 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+    <!-- LaserFlow Background Effect (Commented Out) -->
+    <!-- Uncomment below to enable LaserFlow effect on game board -->
+    <!-- <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
+      <LaserFlow
+        :beam-x-frac="0.5"
+        :beam-y-frac="0.5"
+        :h-len-factor="0.6"
+        :v-len-factor="0.6"
+        :decay="3.0"
+        :flow-speed="0.15"
+        :flow-strength="0.15"
+      />
+    </div> -->
     <div class="max-w-7xl mx-auto">
       <!-- Game Header -->
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4">

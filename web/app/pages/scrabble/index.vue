@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-green-900 via-teal-900 to-blue-900">
+  <ClickSpark>
+    <div class="min-h-screen bg-gradient-to-br from-green-900 via-teal-900 to-blue-900">
     <!-- Confirmation Modal -->
     <ConfirmModal
       :show="showExitConfirm"
@@ -11,8 +12,20 @@
     />
 
     <!-- Main Menu -->
-    <div v-if="gameState === 'menu'" class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl">
+    <div v-if="gameState === 'menu'" class="min-h-screen flex items-center justify-center p-4 relative">
+      <!-- LaserFlow Background Effect -->
+      <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
+        <LaserFlow
+          :beam-x-frac="0.5"
+          :beam-y-frac="0.5"
+          :h-len-factor="0.7"
+          :v-len-factor="0.7"
+          :decay="2.5"
+          :flow-speed="0.2"
+          :flow-strength="0.2"
+        />
+      </div>
+      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl relative z-10">
         <h1 class="text-4xl font-bold text-white mb-8 text-center">Scrabble</h1>
 
         <div class="space-y-4">
@@ -63,8 +76,20 @@
     </div>
 
     <!-- Setup Screen -->
-    <div v-else-if="gameState === 'setup'" class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full shadow-2xl">
+    <div v-else-if="gameState === 'setup'" class="min-h-screen flex items-center justify-center p-4 relative">
+      <!-- LaserFlow Background Effect -->
+      <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
+        <LaserFlow
+          :beam-x-frac="0.5"
+          :beam-y-frac="0.5"
+          :h-len-factor="0.7"
+          :v-len-factor="0.7"
+          :decay="2.5"
+          :flow-speed="0.2"
+          :flow-strength="0.2"
+        />
+      </div>
+      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full shadow-2xl relative z-10">
         <h2 class="text-3xl font-bold text-white mb-6">Game Setup</h2>
 
         <!-- Online Room Section -->
@@ -189,6 +214,19 @@
 
     <!-- Game Board -->
     <div v-else-if="gameState === 'playing'" class="p-4">
+      <!-- LaserFlow Background Effect (Commented Out) -->
+      <!-- Uncomment below to enable LaserFlow effect on game board -->
+      <!-- <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
+        <LaserFlow
+          :beam-x-frac="0.5"
+          :beam-y-frac="0.5"
+          :h-len-factor="0.6"
+          :v-len-factor="0.6"
+          :decay="3.0"
+          :flow-speed="0.15"
+          :flow-strength="0.15"
+        />
+      </div> -->
       <div class="max-w-7xl mx-auto">
         <!-- Game Header -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4">
@@ -305,7 +343,8 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </ClickSpark>
 </template>
 
 <script setup lang="ts">
