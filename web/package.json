@@ -16,6 +16,7 @@
     "engine.io": "^6.6.4",
     "mongoose": "^8.19.2",
     "nuxt": "^4.2.0",
+    "nuxt-lottie": "^1.0.5",
     "postprocessing": "^6.37.8",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",

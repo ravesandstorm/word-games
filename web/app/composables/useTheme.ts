@@ -51,15 +51,48 @@ const getAccentColor = computed(() => {
   return colors[currentTheme.value];
 });
 
-  // Get hyperspeed background color for theme (in 0x hex format)
-  const getHyperspeedBgColor = computed(() => {
-    const colors: Record<Theme, number> = {
-      purple: 0x1a0a2e ,  // Dark purple
-      blue: 0x0a1929,    // Dark blue
-      green: 0x0a1f1a,   // Dark green
-      orange: 0x1f1209,  // Dark orange
-      pink: 0x1f0a1a,     // Dark pink
-      light: 0x1a1a1a,
+  // Get hyperspeed cars colors for theme in 0x hex format (left and right)
+  const getHyperspeedColors = computed(() => {
+    const colors: Record<
+      Theme,
+      { left: number[]; right: number[]; background: number; sticks: number }
+    > = {
+      purple: {
+        left: [0xff00cc, 0xbd00ff, 0xff3399],
+        right: [0x00f7ff, 0x0099ff, 0x0066ff],
+        background: 0x0d0221, 
+        sticks: 0x00f7ff,
+      },
+      blue: {
+        left: [0xdc5b20, 0xdca320, 0xdc2020],
+        right: [0x334bf7, 0xe5e6ed, 0xbfc6f3],
+        background: 0x0b4547,
+        sticks: 0xc5e8eb,
+      },
+      green: {
+        left: [0x39ff14, 0x00cc44, 0xadff2f],
+        right: [0xffe8a3, 0xffd6a5, 0xffbd69],
+        background: 0x0a1f0d,
+        sticks: 0xffe8a3,
+      },
+      orange: {
+        left: [0xff5500, 0xff3300, 0xff7700],
+        right: [0xdadafa, 0xbebae3, 0x8f97e4],
+        background: 0x1f1209,
+        sticks: 0xdadafa,
+      },
+      pink: {
+        left: [0xff073a, 0xd60058, 0xff4081],
+        right: [0xcbffed, 0xa3ffe3, 0x70e0c8],
+        background: 0x1f0510,
+        sticks: 0xcbffed,
+      },
+      light: {
+        left: [0x7d0d1b, 0xa90519, 0xff102a],
+        right: [0xf1eece, 0xe6e2b1, 0xdfd98a],
+        background: 0x0b4547,
+        sticks: 0xf1eece,
+      },
     };
     return colors[currentTheme.value];
   });
@@ -69,6 +102,6 @@ const getAccentColor = computed(() => {
     setTheme,
     getGradientClass,
     getAccentColor,
-    getHyperspeedBgColor
+    getHyperspeedColors
   };
 }

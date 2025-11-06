@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
-    <!-- Confirmation Modal -->
     <ConfirmModal
       :show="showExitConfirm"
       title="Exit Game?"
@@ -10,10 +9,8 @@
       @cancel="showExitConfirm = false"
     />
 
-    <!-- Game Screen -->
-    <div v-if="game.gameStatus.value !== 'lost'" class="max-w-lg w-full">
+    <div v-if="game.gameStatus.value !== 'lost' || flippingRow !== -1" class="max-w-lg w-full">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
-        <!-- Header -->
         <div class="text-center mb-6">
           <div class="flex justify-between items-center mb-2">
             <button
@@ -23,8 +20,7 @@
               ← Home
             </button>
             <h1 class="text-4xl font-bold text-white">Wordle</h1>
-            <div class="w-20"></div> <!-- Spacer for centering -->
-          </div>
+            <div class="w-20"></div> </div>
           <div class="flex justify-center gap-6 text-white">
             <div class="bg-white/20 rounded-lg px-4 py-2">
               <p class="text-sm text-gray-300">Win Streak</p>
@@ -37,18 +33,26 @@
           </div>
         </div>
 
-        <!-- Game Won Message with Animation -->
-        <div v-if="game.gameStatus.value === 'won'" class="mb-6 relative">
-          <!-- Win Animation Overlay -->
+        <div v-if="game.gameStatus.value === 'won' && flippingRow === -1" class="mb-6 relative">
           <div v-if="showWinAnimation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
             <div class="text-center animate-bounce-in">
-              <div class="text-9xl mb-4 animate-spin-slow">🎉</div>
+              <div class="mb-4">
+                <Lottie
+                  name="win-animation"
+                  :autoplay="true"
+                  :loop="false"
+                  width="400px"
+                  height="400px"
+                  :speed="1.5"
+                  :scale="2"
+                  v-on:on-complete="showWinAnimation = false"
+                />
+              </div>
               <h2 class="text-6xl font-bold text-yellow-400 mb-2 animate-pulse">You Won!</h2>
               <p class="text-2xl text-white">You guessed it in {{ game.guesses.value.length }} tries!</p>
             </div>
           </div>
 
-          <!-- Regular Win Message -->
           <div class="bg-green-500/30 rounded-xl p-4 text-center">
             <p class="text-white font-bold text-xl mb-2">🎉 Congratulations!</p>
             <p class="text-gray-200">You guessed the word in {{ game.guesses.value.length }} tries!</p>
@@ -61,36 +65,32 @@
           </div>
         </div>
 
-        <!-- Guess Grid -->
         <div class="mb-6 space-y-2">
           <div
             v-for="(guess, guessIndex) in displayGuesses"
             :key="guessIndex"
             :class="[
               'flex gap-2 justify-center',
-              shakeRow === guessIndex ? 'animate-shake' : '',
-              flipRow === guessIndex ? 'animate-flip-row' : ''
+              shakeRow === guessIndex ? 'animate-shake' : ''
             ]"
           >
             <div
               v-for="(letter, letterIndex) in guess.split('')"
               :key="letterIndex"
               :class="[
-                'w-14 h-14 flex items-center justify-center text-2xl font-bold rounded-lg border-2 transition-all',
-                getLetterClass(guess, letterIndex, guessIndex < game.guesses.value.length),
-                flipRow === guessIndex ? `animate-flip-${letterIndex}` : ''
+                'w-14 h-14 flex items-center justify-center text-2xl font-bold rounded-lg border-2 transition-all color-reveal',
+                getLetterClass(guess, letterIndex, guessIndex),
+                getFlipClass(guessIndex, letterIndex)
               ]"
-              :style="flipRow === guessIndex ? `animation-delay: ${letterIndex * 0.15}s` : ''"
+              @animationend="handleAnimationEnd(guessIndex, letterIndex)"
             >
               {{ letter }}
             </div>
           </div>
         </div>
 
-        <!-- Message -->
         <p v-if="message" class="text-center text-yellow-300 font-semibold mb-4">{{ message }}</p>
 
-        <!-- Keyboard -->
         <div class="space-y-2">
           <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex gap-1 justify-center">
             <button
@@ -98,9 +98,10 @@
               :key="key"
               @click="handleKeyPress(key)"
               :class="[
-                'px-3 py-4 rounded font-bold text-sm transition-all',
+                'px-3 py-4 rounded font-bold text-sm transition-all color-reveal',
                 key === 'ENTER' || key === 'BACK' ? 'bg-gray-500 hover:bg-gray-600 text-white' : getKeyClass(key)
               ]"
+              :disabled="flippingRow !== -1"
             >
               {{ key === 'BACK' ? '⌫' : key }}
             </button>
@@ -109,8 +110,7 @@
       </div>
     </div>
 
-    <!-- Game Over Screen -->
-    <div v-else class="max-w-lg w-full">
+    <div v-else-if="flippingRow === -1" class="max-w-lg w-full">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl text-center">
         <h1 class="text-4xl font-bold text-white mb-4">Game Over!</h1>
         <p class="text-gray-200 text-xl mb-2">The word was:</p>
@@ -139,9 +139,16 @@ import type { WordleServerStatus } from '../../../types/index';
 const game = useWordle();
 const message = ref('');
 const shakeRow = ref(-1);
-const flipRow = ref(-1);
 const showWinAnimation = ref(false);
 const showExitConfirm = ref(false);
+
+// Animation state
+const flippingRow = ref(-1);
+const flippingCol = ref(-1);
+const flipState = ref<'in' | 'out' | 'idle'>('idle');
+// Track which individual cells have been revealed visually
+const revealedCells = reactive(Array(6).fill(null).map(() => Array(5).fill(false)));
+const displayedKeyboardStatus = reactive<Record<string, string>>({});
 
 const keyboardLayout = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -149,50 +156,59 @@ const keyboardLayout = [
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
 ];
 
+const syncKeyboardColors = () => {
+  keyboardLayout.flat().forEach(key => {
+    if (key.length === 1 && key.match(/[A-Z]/)) {
+      displayedKeyboardStatus[key] = game.getKeyboardLetterStatus(key);
+    }
+  });
+};
+
 // Initialize game on mount
 onMounted(async () => {
   await game.initializeGame();
-  // send request param with origin
+  // Sync revealed cells for existing guesses if game was reloaded
+  game.guesses.value.forEach((_, rowIndex) => {
+    for (let i = 0; i < 5; i++) {
+      revealedCells[rowIndex]![i] = true;
+    }
+    syncKeyboardColors();
+  });
+
   const status = await $fetch('/api/status', { params: { origin: 'wordle' } }) as WordleServerStatus;
   console.log('[WORDLE] Server status:', status);
 });
 
-// Watch for win status to trigger animation
+// Watch for win status to trigger animation (only after flips are done)
 watch(() => game.gameStatus.value, (newStatus) => {
-  if (newStatus === 'won') {
-    showWinAnimation.value = true;
-    setTimeout(() => {
-      showWinAnimation.value = false;
-    }, 3000); // Show for 3 seconds
+  if (newStatus === 'won' && flippingRow.value === -1) {
+    triggerWinAnimation();
   }
 });
+
+const triggerWinAnimation = () => {
+    showWinAnimation.value = true;
+    // false is set after animation completes
+}
 
 // Display guesses (filled + current + empty)
 const displayGuesses = computed(() => {
   const result: string[] = [];
-
-  // Add completed guesses
-  game.guesses.value.forEach((guess: string) => {
-    result.push(guess);
-  });
-
-  // Add current guess if game is still playing
+  game.guesses.value.forEach((guess: string) => result.push(guess));
   if (game.gameStatus.value === 'playing') {
-    const currentGuess = game.currentGuess.value.padEnd(5, ' ');
-    result.push(currentGuess);
+    result.push(game.currentGuess.value.padEnd(5, ' '));
   }
-
-  // Fill remaining rows with empty spaces
   while (result.length < game.maxGuesses) {
     result.push('     ');
   }
-
   return result;
 });
 
-// Get letter class based on status
-const getLetterClass = (guess: string, index: number, isSubmitted: boolean) => {
-  if (!isSubmitted) {
+// Get letter class based on REVEALED status, not just submitted status
+const getLetterClass = (guess: string, index: number, rowIndex: number) => {
+  // Only show color if specifically revealed by our animation sequencer
+  // or if it was already revealed on load
+  if (!revealedCells[rowIndex]![index]) {
     return 'bg-white/20 border-gray-400 text-white';
   }
 
@@ -207,44 +223,71 @@ const getLetterClass = (guess: string, index: number, isSubmitted: boolean) => {
   }
 };
 
-// Get keyboard key class
-const getKeyClass = (key: string) => {
-  const status = game.getKeyboardLetterStatus(key);
+// Get animation class for sequential flipping
+const getFlipClass = (rowIndex: number, colIndex: number) => {
+  if (flippingRow.value === rowIndex && flippingCol.value === colIndex) {
+    return flipState.value === 'in' ? 'animate-flip-in' : 'animate-flip-out';
+  }
+  return '';
+};
 
-  if (status === 'correct') {
-    return 'bg-green-500 hover:bg-green-600 text-white';
-  } else if (status === 'present') {
-    return 'bg-yellow-500 hover:bg-yellow-600 text-white';
-  } else if (status === 'absent') {
-    return 'bg-gray-700 hover:bg-gray-800 text-white';
-  } else {
-    return 'bg-gray-500 hover:bg-gray-600 text-white';
+// Handle end of animation events to trigger next steps
+const handleAnimationEnd = (rowIndex: number, colIndex: number) => {
+  if (flippingRow.value !== rowIndex || flippingCol.value !== colIndex) return;
+
+  if (flipState.value === 'in') {
+    // First half of flip done: reveal color, start second half
+    revealedCells[rowIndex]![colIndex] = true;
+    flipState.value = 'out';
+  } else if (flipState.value === 'out') {
+    // Full flip done for this tile
+    flipState.value = 'idle';
+    
+    if (colIndex < 4) {
+      // Move to next column
+      flippingCol.value++;
+      flipState.value = 'in';
+    } else {
+      // Row finished
+      flippingRow.value = -1;
+      flippingCol.value = -1;
+
+      syncKeyboardColors();
+      
+      // Check for delayed win animation
+      if (game.gameStatus.value === 'won') {
+        triggerWinAnimation();
+      }
+    }
   }
 };
 
-// Handle key press
+const getKeyClass = (key: string) => {
+  const status = displayedKeyboardStatus[key];
+  if (status === 'correct') return 'bg-green-500 hover:bg-green-600 text-white';
+  if (status === 'present') return 'bg-yellow-500 hover:bg-yellow-600 text-white';
+  if (status === 'absent') return 'bg-gray-700 hover:bg-gray-800 text-white';
+  return 'bg-gray-500 hover:bg-gray-600 text-white';
+};
+
 const handleKeyPress = async (key: string) => {
-  if (game.gameStatus.value !== 'playing') return;
+  // Block input while animating
+  if (game.gameStatus.value !== 'playing' || flippingRow.value !== -1) return;
 
   if (key === 'ENTER') {
     const currentRowIndex = game.guesses.value.length;
     const success = await game.submitGuess();
 
     if (!success) {
-      // Shake animation for invalid word
       shakeRow.value = currentRowIndex;
       setTimeout(() => shakeRow.value = -1, 500);
-
-      if (game.currentGuess.value.length !== 5) {
-        message.value = 'Word must be 5 letters!';
-      } else {
-        message.value = 'Not a valid word!';
-      }
+      message.value = game.currentGuess.value.length !== 5 ? 'Word must be 5 letters!' : 'Not a valid word!';
       setTimeout(() => message.value = '', 2000);
     } else {
-      // Flip animation for valid word
-      flipRow.value = currentRowIndex;
-      setTimeout(() => flipRow.value = -1, 1500);
+      // Start sequential flip
+      flippingRow.value = currentRowIndex;
+      flippingCol.value = 0;
+      flipState.value = 'in';
     }
   } else if (key === 'BACK') {
     game.removeLetter();
@@ -257,7 +300,6 @@ const handleKeyPress = async (key: string) => {
 onMounted(() => {
   const handleKeyboard = (e: KeyboardEvent) => {
     const key = e.key.toUpperCase();
-
     if (key === 'ENTER') {
       handleKeyPress('ENTER');
     } else if (key === 'BACKSPACE') {
@@ -266,23 +308,23 @@ onMounted(() => {
       handleKeyPress(key);
     }
   };
-
   window.addEventListener('keydown', handleKeyboard);
-
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyboard);
   });
 });
 
-// Restart game
 const restartGame = async () => {
   await game.initializeGame();
   message.value = '';
+  // Reset visual state
+  for(let r=0; r<6; r++) { for(let c=0; c<5; c++) revealedCells[r]![c] = false; }
+  flippingRow.value = -1;
+
+  syncKeyboardColors();
 };
 
-// Handle home button click
 const handleHomeClick = () => {
-  // Show confirmation if game is in progress
   if (game.gameStatus.value === 'playing' && game.guesses.value.length > 0) {
     showExitConfirm.value = true;
   } else {
@@ -290,7 +332,6 @@ const handleHomeClick = () => {
   }
 };
 
-// Confirm exit
 const confirmExit = () => {
   showExitConfirm.value = false;
   navigateTo('/');
@@ -303,60 +344,38 @@ const confirmExit = () => {
   10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
   20%, 40%, 60%, 80% { transform: translateX(2px); }
 }
-
-@keyframes flip {
-  0% { transform: rotateX(0); }
-  50% { transform: rotateX(90deg); }
-  100% { transform: rotateX(0); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bounce-in {
-  0% {
-    transform: scale(0) translateY(-100px);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1) translateY(0);
-  }
-  100% {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
+  0% { transform: scale(0) translateY(-100px); opacity: 0; }
+  50% { transform: scale(1.1) translateY(0); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.animate-shake { animation: shake 0.5s ease-in-out; }
+.animate-fade-in { animation: fade-in 0.5s ease-in-out; }
+.animate-bounce-in { animation: bounce-in 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+
+/* NEW: Two-stage flip animations */
+@keyframes flip-in {
+  from { transform: rotateX(0deg); }
+  to { transform: rotateX(90deg); }
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes flip-out {
+  from { transform: rotateX(90deg); }
+  to { transform: rotateX(0deg); }
 }
 
-.animate-shake {
-  /* change intensity of shake */ 
-  animation: shake 0.5s ease-in-out ;
+.color-reveal {
+  transition: background-color 0.15s ease-in; /* Adjust time as needed */
 }
 
-.animate-flip-0,
-.animate-flip-1,
-.animate-flip-2,
-.animate-flip-3,
-.animate-flip-4 {
-  animation: flip 0.8s ease-in-out;
-  animation-fill-mode: forwards;
+.animate-flip-in {
+  animation: flip-in 0.15s ease-in forwards;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.5s ease-in-out;
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.animate-spin-slow {
-  animation: spin-slow 2s linear infinite;
+.animate-flip-out {
+  animation: flip-out 0.15s ease-out forwards;
 }
 </style>

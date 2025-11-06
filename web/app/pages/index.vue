@@ -1,5 +1,12 @@
 <template>
-  <ClickSpark>
+  <ClickSpark
+    :spark-color="theme.getAccentColor.value"
+    :spark-size="15"
+    :spark-radius="20"
+    :spark-count="7"
+    :duration="400"
+    :easing="'ease-out'"
+  >
     <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500 relative', theme.getGradientClass.value]">
       <!-- Hyperspeed Background -->
       <div class="fixed inset-0 z-0 opacity-30">
@@ -133,15 +140,15 @@ const theme = useTheme();
 const hoveredGame = ref<string | null>(null);
 
 // Hyperspeed options with theme-based background color
-const hyperspeedOptions = computed(() => ({
+var hyperspeedOptions = computed(() => ({
   distortion: 'turbulentDistortion',
-  length: 400,
+  length: 500,
   roadWidth: 10,
   islandWidth: 2,
   lanesPerRoad: 4,
-  fov: 90,
-  fovSpeedUp: 150,
-  speedUp: 2,
+  fov: 80,
+  fovSpeedUp: 120,
+  speedUp: 1.5,
   carLightsFade: 0.4,
   totalSideLightSticks: 20,
   lightPairsPerRoadWay: 40,
@@ -150,22 +157,22 @@ const hyperspeedOptions = computed(() => ({
   brokenLinesLengthPercentage: 0.5,
   lightStickWidth: [0.12, 0.5] as [number, number],
   lightStickHeight: [1.3, 1.7] as [number, number],
-  movingAwaySpeed: [60, 80] as [number, number],
-  movingCloserSpeed: [-120, -160] as [number, number],
+  movingAwaySpeed: [40, 60] as [number, number],
+  movingCloserSpeed: [-80, -120] as [number, number],
   carLightsLength: [400 * 0.03, 400 * 0.2] as [number, number],
   carLightsRadius: [0.05, 0.14] as [number, number],
   carWidthPercentage: [0.3, 0.5] as [number, number],
   carShiftX: [-0.8, 0.8] as [number, number],
-  carFloorSeparation: [0, 5] as [number, number],
+  carFloorSeparation: [0, 0.1] as [number, number],
   colors: {
     roadColor: 0x1a1a1a,
     islandColor: 0x0a0a0a,
-    background: theme.getHyperspeedBgColor.value,
+    background: theme.getHyperspeedColors.value.background,
     shoulderLines: 0x333333,
     brokenLines: 0x333333,
-    leftCars: [0xd856bf, 0x6750a2, 0xc247ac],
-    rightCars: [0x03b3c3, 0x0e5ea5, 0x324555],
-    sticks: 0xffffff, // White glow for subtle effect
+    leftCars: theme.getHyperspeedColors.value.left,
+    rightCars: theme.getHyperspeedColors.value.right,
+    sticks: theme.getHyperspeedColors.value.sticks,
   },
 }));
 
