@@ -1,7 +1,7 @@
 <template>
   <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500 relative', currentGradientClass]">
     <!-- Header with Theme Selector -->
-    <header class="header">
+    <header v-if="!route.meta.hideHeader" class="header">
       <div class="header-content">
         <div class="header-inner">
           <div>
@@ -30,7 +30,8 @@
 </template>
 
 <script setup lang="ts">
-const { setTheme, currentGradientClass, currentTheme, themes } = useTheme();
+  const route = useRoute();
+  const { setTheme, currentGradientClass, currentTheme, themes } = useTheme();
 </script>
 
 <style scoped>

@@ -150,16 +150,16 @@ const hyperspeedOptions = computed(() => ({
 
 const games = [
   {
-    id: 'wordchain',
-    name: 'Word Chain',
-    tagline: 'Build words, chain letters, score big!',
-    description: 'Place letters on the board to form words. Each word must connect to existing letters. Longer words score more points!',
-    icon: '🔗',
-    gradient: 'from-purple-600 to-blue-600',
-    route: '/wordchain',
-    difficulty: '⭐⭐⭐',
-    players: '1-4 Players',
-    features: ['Strategic', 'Multiplayer', 'Online']
+    id: 'wordle',
+    name: 'Infinite Wordle',
+    tagline: 'Guess the word in 6 tries',
+    description: 'Guess the 5-letter word in 6 attempts. Green means correct position, yellow means wrong position. Keep playing to get high scores!',
+    icon: '🎯',
+    gradient: 'from-indigo-600 to-purple-600',
+    route: '/wordle',
+    difficulty: '⭐⭐',
+    players: 'Solo',
+    features: ['Daily Challenge', 'Win Streak', 'Quick Play']
   },
   {
     id: 'scrabble',
@@ -174,17 +174,17 @@ const games = [
     features: ['Classic', 'Multipliers', 'Tile Bag']
   },
   {
-    id: 'wordle',
-    name: 'Wordle',
-    tagline: 'Guess the word in 6 tries',
-    description: 'Guess the 5-letter word in 6 attempts. Green means correct position, yellow means wrong position. Track your win streak!',
-    icon: '🎯',
-    gradient: 'from-indigo-600 to-purple-600',
-    route: '/wordle',
-    difficulty: '⭐⭐',
-    players: 'Solo',
-    features: ['Daily Challenge', 'Win Streak', 'Quick Play']
-  }
+    id: 'wordchain',
+    name: 'Word Chain',
+    tagline: 'Build words, chain letters, score big!',
+    description: 'Place letters on the board to form words. Each word must connect to existing letters. Longer words score more points!',
+    icon: '🔗',
+    gradient: 'from-purple-600 to-blue-600',
+    route: '/wordchain',
+    difficulty: '⭐⭐⭐',
+    players: '1-4 Players',
+    features: ['Strategic', 'Multiplayer', 'Online']
+  },
 ];
 
 const navigateToGame = (route: string) => {

@@ -136,6 +136,10 @@
 <script setup lang="ts">
 import type { WordleServerStatus } from '../../../types/index';
 
+definePageMeta({
+  hideHeader: true
+});
+
 const { currentGradientClass } = useTheme();
 
 const game = useWordle();
