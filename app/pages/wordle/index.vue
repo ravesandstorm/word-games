@@ -10,7 +10,7 @@
     />
 
     <div v-if="game.gameStatus.value !== 'lost' || flippingRow !== -1" class="max-w-lg w-full">
-      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
+      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
         <div class="text-center mb-6">
           <div class="flex justify-between items-center mb-2">
             <button
@@ -27,7 +27,7 @@
               <p class="text-2xl font-bold text-green-400">{{ game.winStreak.value }}</p>
             </div>
             <div class="bg-white/20 rounded-lg px-4 py-2">
-              <p class="text-sm text-gray-300">High Score</p>
+              <p class="text-sm text-gray-300">Highest Streak</p>
               <p class="text-2xl font-bold text-yellow-400">{{ game.highScore.value }}</p>
             </div>
           </div>
@@ -91,15 +91,18 @@
 
         <p v-if="message" class="text-center text-yellow-300 font-semibold mb-4">{{ message }}</p>
 
-        <div class="space-y-2">
-          <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex gap-1 justify-center">
+        <!-- Wordle Keyboard -->
+        <div class="space-y-2 w-full pb-2">
+          <div v-for="(row, rowIndex) in keyboardLayout" :key="rowIndex" class="flex gap-1 justify-center w-full">
             <button
               v-for="key in row"
               :key="key"
               @click="handleKeyPress(key)"
               :class="[
-                'px-3 py-4 rounded font-bold text-sm transition-all color-reveal',
-                key === 'ENTER' || key === 'BACK' ? 'bg-gray-500 hover:bg-gray-600 text-white' : getKeyClass(key)
+                'px-2 py-3 rounded font-bold text-md transition-all color-reveal flex-1 touch-manipulation duration-150',
+                key === 'ENTER' || key === 'BACK'
+                  ? 'bg-gray-500 hover:bg-gray-600 text-white'
+                  : getKeyClass(key)
               ]"
               :disabled="flippingRow !== -1"
             >
