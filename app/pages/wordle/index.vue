@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+  <div :class="[currentGradientClass, 'min-h-screen flex items-center justify-center p-4']">
     <ConfirmModal
       :show="showExitConfirm"
       title="Exit Game?"
@@ -135,6 +135,8 @@
 
 <script setup lang="ts">
 import type { WordleServerStatus } from '../../../types/index';
+
+const { currentGradientClass } = useTheme();
 
 const game = useWordle();
 const message = ref('');

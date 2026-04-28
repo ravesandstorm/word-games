@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative">
+  <div :class="[currentGradientClass, 'min-h-screen flex items-center justify-center p-4 relative']">
     <!-- LaserFlow Background Effect -->
     <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
       <LaserFlow
@@ -64,6 +64,8 @@
 </template>
 
 <script setup lang="ts">
+const { currentGradientClass } = useTheme();
+
 defineProps<{
   mongoAvailable: boolean;
   dictionarySize: number;

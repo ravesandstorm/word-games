@@ -1,6 +1,6 @@
 <template>
   <ClickSpark>
-    <div class="min-h-screen bg-gradient-to-br from-green-900 via-teal-900 to-blue-900">
+    <div :class="[currentGradientClass, 'min-h-screen']">
     <!-- Confirmation Modal -->
     <ConfirmModal
       :show="showExitConfirm"
@@ -351,6 +351,8 @@
 import type { ScrabblePlayer } from '../../../types/scrabble';
 import type { WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
+
+const { currentGradientClass } = useTheme();
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
