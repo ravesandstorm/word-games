@@ -11,6 +11,15 @@
         @cancel="showExitConfirm = false"
       />
 
+      <ConfirmModal
+        :show="showResetConfirm"
+        title="Reset Game?"
+        message="Are you sure you want to reset the game? Your current game progress will be reset."
+        confirm-text="Reset"
+        @confirm="confirmResetGame"
+        @cancel="showResetConfirm = false"
+      />
+
       <!-- Main Menu -->
       <ScrabbleMainMenu
         v-if="gameState === 'menu'"
@@ -85,6 +94,7 @@ const statusMessage = ref('');
 const isValidating = ref(false);
 const joinCode = ref('');
 const showExitConfirm = ref(false);
+const showResetConfirm = ref(false);
 
 const game = useScrabble();
 const validation = useWordValidation();
@@ -455,6 +465,14 @@ const submitTurn = async () => {
 };
 
 const resetGame = () => {
+  if (gameState.value === 'playing') {
+    showResetConfirm.value = true;
+  } else {
+    confirmResetGame();
+  }
+}
+
+const confirmResetGame = () => {
   console.log('[SCRABBLE] Resetting game');
   gameState.value = 'menu';
   roomCode.value = '';
@@ -467,5 +485,6 @@ const resetGame = () => {
     p.score = 0;
     p.tiles = [];
   });
+  showResetConfirm.value = false;
 };
 </script>

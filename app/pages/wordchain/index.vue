@@ -11,6 +11,15 @@
         @cancel="showExitConfirm = false"
       />
 
+      <ConfirmModal
+        :show="showResetConfirm"
+        title="Reset Game?"
+        message="Are you sure you want to reset the game? Your current game progress will be reset."
+        confirm-text="Reset"
+        @confirm="confirmResetGame"
+        @cancel="showResetConfirm = false"
+      />
+
       <!-- Wordchain Main Menu -->
       <WordchainMainMenu
         v-if="gameState === 'menu'"
@@ -84,6 +93,7 @@ const isCreatingRoom = ref(false);
 const statusMessage = ref('');
 const isValidating = ref(false);
 const showExitConfirm = ref(false);
+const showResetConfirm = ref(false);
 
 const boardSize = ref(15);
 const maxLettersPerTurn = ref(3);
@@ -437,6 +447,14 @@ const submitTurn = async () => {
 };
 
 const resetGame = () => {
+  if (gameState.value === 'playing') {
+    showResetConfirm.value = true;
+  } else {
+    confirmResetGame();
+  }
+};
+
+const confirmResetGame = () => {
   console.log('[APP] Resetting game');
   gameState.value = 'menu';
   roomCode.value = '';
@@ -446,5 +464,6 @@ const resetGame = () => {
   game.currentPlayerIndex.value = 0;
   game.usedWords.value = [];
   game.players.value.forEach((p: Player) => p.score = 0);
+  showResetConfirm.value = false;
 };
 </script>
