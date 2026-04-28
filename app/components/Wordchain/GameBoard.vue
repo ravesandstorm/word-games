@@ -89,7 +89,7 @@
       </div>
       
       <!-- Game Board -->
-      <div class="flex justify-center overflow-auto">
+      <div class="lg:col-span-3 overflow-auto justify-center">
         <div class="inline-block bg-gray-800 p-2 rounded-lg shadow-2xl">
           <div
             :style="{

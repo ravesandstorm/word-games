@@ -17,8 +17,8 @@
         :mongo-available="mongoAvailable"
         :dictionary-size="dictionarySize"
         :message="statusMessage"
-        @local-game="startLocalSetup"
-        @online-game="startOnlineSetup"
+        @local-setup="startLocalSetup"
+        @online-setup="startOnlineSetup"
       />
 
       <!-- Wordchain Game Setup -->
