@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+  <div :class="[currentGradientClass, 'min-h-screen p-4']">
     <!-- LaserFlow Background Effect (Commented Out) -->
     <!-- Uncomment below to enable LaserFlow effect on game board -->
     <!-- <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
@@ -135,6 +135,8 @@
 
 <script setup lang="ts">
 import type { Cell, Player, Position } from '../../types/game';
+
+const { currentGradientClass } = useTheme();
 
 const props = defineProps<{
   board: Cell[][];
