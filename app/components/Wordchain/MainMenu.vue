@@ -17,7 +17,7 @@
       
       <div class="space-y-4">
         <button
-          @click="$emit('local-game')"
+          @click="$emit('local-setup')"
           class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all transform hover:scale-105"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@
         </button>
         
         <button
-          @click="$emit('online-game')"
+          @click="$emit('online-setup')"
           :disabled="!mongoAvailable"
           :class="[
             'w-full font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all',
@@ -73,8 +73,8 @@ defineProps<{
 }>();
 
 defineEmits<{
-  'local-game': [];
-  'online-game': [];
+  'local-setup': [];
+  'online-setup': [];
 }>();
 
 const handleHome = () => {

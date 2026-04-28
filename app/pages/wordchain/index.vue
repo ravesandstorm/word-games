@@ -11,6 +11,7 @@
       @cancel="showExitConfirm = false"
     />
 
+    <!-- Wordchain Main Menu -->
     <WordchainMainMenu
       v-if="gameState === 'menu'"
       :mongo-available="mongoAvailable"
@@ -20,6 +21,7 @@
       @online-game="startOnlineSetup"
     />
 
+    <!-- Wordchain Game Setup -->
     <WordchainGameSetup
       v-else-if="gameState === 'setup'"
       :is-online="isOnlineMode"
@@ -39,7 +41,8 @@
       @start-game="startGame"
       @back="backToMenu"
     />
-    
+
+    <!-- Wordchain Game Board -->
     <WordchainGameBoard
       v-else-if="gameState === 'playing'"
       :board="game.board.value"
