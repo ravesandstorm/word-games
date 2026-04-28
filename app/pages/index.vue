@@ -208,49 +208,11 @@ const navigateToGame = (route: string) => {
   animation: fade-in 0.6s ease-out;
 }
 
-.theme-selector {
-  @apply flex gap-2 items-center p-2;
-}
-
-.theme-selector span {
-  @apply text-white text-sm mr-2;
-}
-
-.header {
-  @apply bg-white/10 backdrop-blur-lg border-b border-white/20 relative z-10;
-}
-
-.header-content {
-  @apply max-w-7xl mx-auto px-4 py-6;
-}
-
-.header-inner {
-  @apply flex justify-between items-center;
-}
-
-.header-inner h1 {
-  @apply text-4xl font-bold text-white mb-1 animate-fade-in;
-}
-
-.header-inner p {
-  @apply text-gray-300 text-sm;
-}
-
 .main-content {
   @apply max-w-7xl mx-auto px-4 py-12 relative z-10;
 }
 
 .main-upper {
   @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
-}
-
-@media (max-width: 768px) {
-  .header {
-    @apply text-center;
-  }
-
-  .header-inner {
-    @apply flex-col gap-4;
-  }
 }
 </style>
