@@ -1,42 +1,32 @@
 export type Theme = 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'light';
 
+/**
+ * Singleton variables, refresh across app
+ * Since inside the exported function they are duplicated
+ */
+
+const currentTheme = ref<Theme>('purple');
+const currentGradientClass = ref<string>('bg-purple-500');
+
 export function useTheme() {
-  const currentTheme = ref<Theme>('purple');
+  const themes: Array<{ name: Theme; label: string; color: string }> = [
+    { name: 'purple', label: 'Purple', color: 'bg-purple-500' },
+    { name: 'blue', label: 'Blue', color: 'bg-blue-500' },
+    { name: 'green', label: 'Green', color: 'bg-green-500' },
+    { name: 'orange', label: 'Orange', color: 'bg-orange-500' },
+    { name: 'pink', label: 'Pink', color: 'bg-pink-500' },
+    { name: 'light', label: 'Light', color: 'bg-gray-500' }
+  ];
 
-  // Load theme from localStorage on mount
-  onMounted(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('word-games-theme') as Theme;
-      if (savedTheme) {
-        currentTheme.value = savedTheme;
-      }
-    }
-  });
-
-  // Save theme to localStorage
-  const setTheme = (theme: Theme) => {
-    currentTheme.value = theme;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('word-games-theme', theme);
-    }
-    console.log(`[THEME] Changed to: ${theme}`);
+  const gradients: Record<Theme, string> = {
+    purple: "from-purple-900/85 via-indigo-950/80 to-violet-950/85",
+    blue: "from-blue-950/85 via-cyan-900/80 to-sky-950/85",
+    green: "from-emerald-950/85 via-teal-900/80 to-green-950/85",
+    orange: "from-amber-900/85 via-orange-950/80 to-rose-950/85",
+    pink: "from-pink-900/85 via-fuchsia-950/80 to-purple-950/85",
+    light: "from-gray-900/85 via-gray-800/80 to-gray-700/85"
   };
 
-  // Get gradient classes for theme
-  const getGradientClass = computed(() => {
-    const gradients: Record<Theme, string> = {
-      purple: "from-purple-900/85 via-indigo-950/80 to-violet-950/85",
-      blue: "from-blue-950/85 via-cyan-900/80 to-sky-950/85",
-      green: "from-emerald-950/85 via-teal-900/80 to-green-950/85",
-      orange: "from-amber-900/85 via-orange-950/80 to-rose-950/85",
-      pink: "from-pink-900/85 via-fuchsia-950/80 to-purple-950/85",
-      light: "from-gray-900/85 via-gray-800/80 to-gray-700/85"
-    };
-    return gradients[currentTheme.value];
-  });
-
-  // Get accent color for theme
-const getAccentColor = computed(() => {
   const colors: Record<Theme, string> = {
     purple:
       "bg-purple-600 hover:bg-violet-700 active:bg-purple-800 ring-2 ring-purple-400/30 hover:ring-purple-300/40",
@@ -48,8 +38,37 @@ const getAccentColor = computed(() => {
     pink: "bg-pink-600 hover:bg-fuchsia-700 active:bg-pink-800 ring-2 ring-pink-400/30 hover:ring-pink-300/40",
     light: "bg-gray-600 hover:bg-gray-700 active:bg-gray-800 ring-2 ring-gray-400/30 hover:ring-gray-300/40"
   };
-  return colors[currentTheme.value];
-});
+
+  // Load theme from localStorage on mount
+  onMounted(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('word-games-theme') as Theme;
+      if (savedTheme) {
+        currentTheme.value = savedTheme;
+        setGradientClass(savedTheme);
+        console.log(`[THEME] Loaded from localStorage: ${savedTheme}`);
+      }
+    }
+  });
+
+  // Save theme to localStorage
+  const setTheme = (theme: Theme) => {
+    currentTheme.value = theme;
+    setGradientClass(theme);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('word-games-theme', theme);
+    }
+    console.log(`[THEME] Changed to: ${theme}`);
+  };
+
+  // Get gradient class function
+  const setGradientClass = (theme: Theme) => {
+    currentGradientClass.value = gradients[theme];
+  }
+
+  // Get accent color for theme
+  const getAccentColor = computed(() => colors[currentTheme.value]);
 
   // Get hyperspeed cars colors for theme in 0x hex format (left and right)
   const getHyperspeedColors = computed(() => {
@@ -98,10 +117,11 @@ const getAccentColor = computed(() => {
   });
 
   return {
+    themes,
     currentTheme,
-    setTheme,
-    getGradientClass,
+    currentGradientClass,
+    getHyperspeedColors,
     getAccentColor,
-    getHyperspeedColors
+    setTheme,
   };
 }

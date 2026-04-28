@@ -1,146 +1,118 @@
 <template>
-  <ClickSpark
-    :spark-color="theme.getAccentColor.value"
-    :spark-size="15"
-    :spark-radius="20"
-    :spark-count="7"
-    :duration="400"
-    :easing="'ease-out'"
-  >
-    <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500 relative', theme.getGradientClass.value]">
+    <ClickSpark
+      :spark-color="getAccentColor"
+      :spark-size="15"
+      :spark-radius="20"
+      :spark-count="7"
+      :duration="400"
+      :easing="'ease-out'"
+    >
+    <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500 relative', currentGradientClass]">
       <!-- Hyperspeed Background -->
       <div class="fixed inset-0 z-0 opacity-30">
         <Hyperspeed :effect-options="hyperspeedOptions" />
       </div>
 
-      <!-- Header with Theme Selector -->
-      <header class="bg-white/10 backdrop-blur-lg border-b border-white/20 relative z-10">
-      <div class="max-w-7xl mx-auto px-4 py-6">
-        <div class="flex justify-between items-center">
-          <div>
-            <h1 class="text-4xl font-bold text-white mb-1 animate-fade-in">Word Games Collection</h1>
-            <p class="text-gray-300 text-sm">Challenge your vocabulary and have fun!</p>
-          </div>
-
-          <!-- Theme Selector -->
-          <div class="flex gap-2 items-center">
-            <span class="text-white text-sm mr-2">Theme:</span>
-            <button
-              v-for="themeOption in themes"
-              :key="themeOption.name"
-              @click="theme.setTheme(themeOption.name)"
-              :class="[
-                'w-10 h-10 rounded-full border-2 transition-all transform hover:scale-110',
-                theme.currentTheme.value === themeOption.name ? 'border-white scale-110' : 'border-transparent',
-                themeOption.color
-              ]"
-              :title="themeOption.label"
-            />
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 py-12 relative z-10">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- Game Cards -->
-        <SpotlightCard
-          v-for="game in games"
-          :key="game.id"
-          @mouseenter="hoveredGame = game.id"
-          @mouseleave="hoveredGame = null"
-          class-name="group relative bg-white/10 backdrop-blur-lg overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl cursor-pointer border-white/20"
-          spotlight-color="rgba(255, 255, 255, 0.55)"
-          @click="navigateToGame(game.route)"
-        >
-          <!-- Game Image/Icon -->
-          <div class="h-48 bg-gradient-to-br overflow-hidden relative" :class="game.gradient">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
-                {{ game.icon }}
+      <!-- Main Content -->
+      <main class="main-content">
+        <div class="main-upper">
+          <!-- Game Cards -->
+          <SpotlightCard
+            v-for="game in games"
+            :key="game.id"
+            @mouseenter="hoveredGame = game.id"
+            @mouseleave="hoveredGame = null"
+            class-name="group relative bg-white/10 backdrop-blur-lg overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl cursor-pointer border-white/20"
+            spotlight-color="rgba(255, 255, 255, 0.55)"
+            @click="navigateToGame(game.route)"
+          >
+            <!-- Game Image/Icon -->
+            <div class="h-48 bg-gradient-to-br overflow-hidden relative" :class="game.gradient">
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
+                  {{ game.icon }}
+                </div>
               </div>
-            </div>
 
-            <!-- Hover Overlay -->
-            <div
-              :class="[
-                'absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300',
-                hoveredGame === game.id ? 'opacity-100' : 'opacity-0'
-              ]"
-            >
-              <div class="text-center px-6">
-                <p class="text-white text-sm leading-relaxed">{{ game.description }}</p>
-                <div class="mt-4 flex flex-wrap gap-2 justify-center">
-                  <span
-                    v-for="feature in game.features"
-                    :key="feature"
-                    class="bg-white/20 text-white text-xs px-3 py-1 rounded-full"
-                  >
-                    {{ feature }}
-                  </span>
+              <!-- Hover Overlay -->
+              <div
+                :class="[
+                  'absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300',
+                  hoveredGame === game.id ? 'opacity-100' : 'opacity-0'
+                ]"
+              >
+                <div class="text-center px-6">
+                  <p class="text-white text-sm leading-relaxed">{{ game.description }}</p>
+                  <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                    <span
+                      v-for="feature in game.features"
+                      :key="feature"
+                      class="bg-white/20 text-white text-xs px-3 py-1 rounded-full"
+                    >
+                      {{ feature }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Game Info -->
-          <div class="p-6">
-            <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
-              {{ game.name }}
-            </h3>
-            <p class="text-gray-300 text-sm mb-4">{{ game.tagline }}</p>
+            <!-- Game Info -->
+            <div class="p-6">
+              <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
+                {{ game.name }}
+              </h3>
+              <p class="text-gray-300 text-sm mb-4">{{ game.tagline }}</p>
 
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-yellow-400 text-sm">{{ game.difficulty }}</span>
-                <span class="text-gray-400 text-xs">•</span>
-                <span class="text-gray-400 text-sm">{{ game.players }}</span>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-yellow-400 text-sm">{{ game.difficulty }}</span>
+                  <span class="text-gray-400 text-xs">•</span>
+                  <span class="text-gray-400 text-sm">{{ game.players }}</span>
+                </div>
+
+                <button
+                  :class="[
+                    'px-4 py-2 rounded-lg font-semibold text-sm transition-all transform group-hover:scale-110',
+                    getAccentColor,
+                    'text-white'
+                  ]"
+                >
+                  Play Now →
+                </button>
               </div>
+            </div>
+          </SpotlightCard>
+        </div>
 
-              <button
-                :class="[
-                  'px-4 py-2 rounded-lg font-semibold text-sm transition-all transform group-hover:scale-110',
-                  theme.getAccentColor.value,
-                  'text-white'
-                ]"
-              >
-                Play Now →
-              </button>
+        <!-- Footer Info -->
+        <div class="mt-16 text-center relative z-10">
+          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-4">About Word Games</h2>
+            <p class="text-gray-300 leading-relaxed mb-4">
+              Welcome to our collection of word games! Challenge yourself with classic games like Wordle,
+              test your vocabulary with Word Chain, or compete with friends in Scrabble. Each game offers
+              unique challenges and endless fun.
+            </p>
+            <div class="flex justify-center gap-4 text-sm text-gray-400">
+              <span>🎮 3 Games</span>
+              <span>•</span>
+              <span>🌐 Online & Local Play</span>
+              <span>•</span>
+              <span>📊 Track Your Progress</span>
             </div>
           </div>
-        </SpotlightCard>
-      </div>
-
-      <!-- Footer Info -->
-      <div class="mt-16 text-center relative z-10">
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl mx-auto">
-          <h2 class="text-2xl font-bold text-white mb-4">About Word Games</h2>
-          <p class="text-gray-300 leading-relaxed mb-4">
-            Welcome to our collection of word games! Challenge yourself with classic games like Wordle,
-            test your vocabulary with Word Chain, or compete with friends in Scrabble. Each game offers
-            unique challenges and endless fun.
-          </p>
-          <div class="flex justify-center gap-4 text-sm text-gray-400">
-            <span>🎮 3 Games</span>
-            <span>•</span>
-            <span>🌐 Online & Local Play</span>
-            <span>•</span>
-            <span>📊 Track Your Progress</span>
-          </div>
         </div>
-      </div>
-    </main>
+      </main>
     </div>
   </ClickSpark>
 </template>
 
 <script setup lang="ts">
-const theme = useTheme();
+const { getAccentColor, currentGradientClass, getHyperspeedColors } = useTheme();
 const hoveredGame = ref<string | null>(null);
 
 // Hyperspeed options with theme-based background color
-var hyperspeedOptions = computed(() => ({
+const hyperspeedOptions = computed(() => ({
   distortion: 'turbulentDistortion',
   length: 500,
   roadWidth: 10,
@@ -167,23 +139,14 @@ var hyperspeedOptions = computed(() => ({
   colors: {
     roadColor: 0x1a1a1a,
     islandColor: 0x0a0a0a,
-    background: theme.getHyperspeedColors.value.background,
+    background: getHyperspeedColors.value.background,
     shoulderLines: 0x333333,
     brokenLines: 0x333333,
-    leftCars: theme.getHyperspeedColors.value.left,
-    rightCars: theme.getHyperspeedColors.value.right,
-    sticks: theme.getHyperspeedColors.value.sticks,
+    leftCars: getHyperspeedColors.value.left,
+    rightCars: getHyperspeedColors.value.right,
+    sticks: getHyperspeedColors.value.sticks,
   },
 }));
-
-const themes = [
-  { name: 'purple' as const, label: 'Purple', color: 'bg-purple-500' },
-  { name: 'blue' as const, label: 'Blue', color: 'bg-blue-500' },
-  { name: 'green' as const, label: 'Green', color: 'bg-green-500' },
-  { name: 'orange' as const, label: 'Orange', color: 'bg-orange-500' },
-  { name: 'pink' as const, label: 'Pink', color: 'bg-pink-500' },
-  { name: 'light' as const, label: 'Light', color: 'bg-gray-500' }
-];
 
 const games = [
   {
@@ -243,5 +206,51 @@ const navigateToGame = (route: string) => {
 
 .animate-fade-in {
   animation: fade-in 0.6s ease-out;
+}
+
+.theme-selector {
+  @apply flex gap-2 items-center p-2;
+}
+
+.theme-selector span {
+  @apply text-white text-sm mr-2;
+}
+
+.header {
+  @apply bg-white/10 backdrop-blur-lg border-b border-white/20 relative z-10;
+}
+
+.header-content {
+  @apply max-w-7xl mx-auto px-4 py-6;
+}
+
+.header-inner {
+  @apply flex justify-between items-center;
+}
+
+.header-inner h1 {
+  @apply text-4xl font-bold text-white mb-1 animate-fade-in;
+}
+
+.header-inner p {
+  @apply text-gray-300 text-sm;
+}
+
+.main-content {
+  @apply max-w-7xl mx-auto px-4 py-12 relative z-10;
+}
+
+.main-upper {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
+}
+
+@media (max-width: 768px) {
+  .header {
+    @apply text-center;
+  }
+
+  .header-inner {
+    @apply flex-col gap-4;
+  }
 }
 </style>
