@@ -1,178 +1,68 @@
 <template>
   <ClickSpark>
-    <div :class="[currentGradientClass, 'min-h-screen']">
-    <!-- Confirmation Modal -->
-    <ConfirmModal
-      :show="showExitConfirm"
-      title="Exit Game?"
-      message="Are you sure you want to exit? Your current game progress will be lost."
-      confirm-text="Exit"
-      @confirm="confirmExit"
-      @cancel="showExitConfirm = false"
-    />
+    <div>
+      <!-- Confirmation Modal -->
+      <ConfirmModal
+        :show="showExitConfirm"
+        title="Exit Game?"
+        message="Are you sure you want to exit? Your current game progress will be lost."
+        confirm-text="Exit"
+        @confirm="confirmExit"
+        @cancel="showExitConfirm = false"
+      />
 
-    <!-- Main Menu -->
-    <ScrabbleMainMenu
-      v-if="gameState === 'menu'"
-      :mongo-available="mongoAvailable"
-      :dictionary-size="dictionarySize"
-      :message="statusMessage"
-      @local-setup="startLocalSetup"
-      @online-setup="startOnlineSetup"
-    />
+      <!-- Main Menu -->
+      <ScrabbleMainMenu
+        v-if="gameState === 'menu'"
+        :mongo-available="mongoAvailable"
+        :dictionary-size="dictionarySize"
+        :message="statusMessage"
+        @local-setup="startLocalSetup"
+        @online-setup="startOnlineSetup"
+      />
 
-    <!-- Setup Screen -->
-    <ScrabbleGameSetup
-      v-else-if="gameState === 'setup'"
-      :is-online="isOnlineMode"
-      :room-code="roomCode"
-      :is-creating="isCreatingRoom"
-      :players="game.players.value"
-      :message="statusMessage"
-      :lobby-player-count="socket.roomPlayers.value.length"
-      :lobby-players="socket.roomPlayers.value"
-      :is-host="isHost"
-      @create-room="createRoom"
-      @join-room="joinRoom"
-      @copy-code="copyRoomCode"
-      @add-player="addPlayer"
-      @remove-player="removePlayer"
-      @update-player="updatePlayerName"
-      @start-game="startGame"
-      @back="backToMenu"
-    />
+      <!-- Setup Screen -->
+      <ScrabbleGameSetup
+        v-else-if="gameState === 'setup'"
+        :is-online="isOnlineMode"
+        :room-code="roomCode"
+        :is-creating="isCreatingRoom"
+        :players="game.players.value"
+        :message="statusMessage"
+        :lobby-player-count="socket.roomPlayers.value.length"
+        :lobby-players="socket.roomPlayers.value"
+        :is-host="isHost"
+        @create-room="createRoom"
+        @join-room="joinRoom"
+        @copy-code="copyRoomCode"
+        @add-player="addPlayer"
+        @remove-player="removePlayer"
+        @update-player="updatePlayerName"
+        @start-game="startGame"
+        @back="backToMenu"
+      />
 
-    <!-- Game Board -->
-    <div v-else-if="gameState === 'playing'" class="p-4">
-      <!-- LaserFlow Background Effect (Commented Out) -->
-      <!-- Uncomment below to enable LaserFlow effect on game board -->
-      <!-- <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
-        <LaserFlow
-          :beam-x-frac="0.5"
-          :beam-y-frac="0.5"
-          :h-len-factor="0.6"
-          :v-len-factor="0.6"
-          :decay="3.0"
-          :flow-speed="0.15"
-          :flow-strength="0.15"
-        />
-      </div> -->
-      <div class="max-w-7xl mx-auto">
-        <!-- Game Header -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4">
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-4">
-              <button
-                @click="handleHomeClick"
-                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all"
-              >
-                ← Home
-              </button>
-              <div>
-                <h2 class="text-2xl font-bold text-white">Round {{ game.currentRound.value }}</h2>
-                <p class="text-yellow-300 font-semibold text-lg">
-                  {{ currentPlayer?.name }}'s Turn
-                </p>
-              </div>
-            </div>
-            <button
-              @click="resetGame"
-              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-            >
-              Reset
-            </button>
-          </div>
-
-          <!-- Player Scores -->
-          <div class="mt-4 grid grid-cols-3 gap-4">
-            <div
-              v-for="(player, index) in game.players.value"
-              :key="index"
-              :class="[
-                'bg-white/10 rounded-lg p-3',
-                index === game.currentPlayerIndex.value ? 'ring-2 ring-yellow-400' : ''
-              ]"
-            >
-              <p class="text-white font-semibold">{{ player.name }}</p>
-              <p class="text-green-400 text-2xl font-bold">{{ player.score }}</p>
-              <p class="text-gray-300 text-sm">{{ player.tiles.length }} tiles</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Board and Tiles Container -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <!-- Scrabble Board -->
-          <div class="lg:col-span-3">
-            <div class="bg-gray-800 p-2 rounded-lg shadow-2xl inline-block">
-              <div
-                :style="{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(15, 1fr)',
-                  gap: '2px'
-                }"
-              >
-                <div
-                  v-for="(cell, index) in flatBoard"
-                  :key="index"
-                  @click="handleCellClick(Math.floor(index / 15), index % 15)"
-                  :class="getCellClass(cell, Math.floor(index / 15), index % 15)"
-                >
-                  <span v-if="cell.letter" class="text-sm font-bold">{{ cell.letter }}</span>
-                  <span v-else-if="cell.multiplier" class="text-xs font-semibold">{{ cell.multiplier }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Player Tiles -->
-          <div class="lg:col-span-1">
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4">
-              <h3 class="text-white font-bold mb-3">Your Tiles</h3>
-              <div class="grid grid-cols-4 gap-2 mb-4">
-                <div
-                  v-for="(tile, index) in currentPlayer?.tiles"
-                  :key="index"
-                  @click="selectTile(index)"
-                  :class="[
-                    'aspect-square bg-yellow-100 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all',
-                    game.selectedTileIndex.value === index ? 'ring-2 ring-blue-400 scale-110' : 'hover:scale-105'
-                  ]"
-                >
-                  <span class="text-xl font-bold text-gray-900">{{ tile.letter || '?' }}</span>
-                  <span class="text-xs text-gray-600">{{ tile.score }}</span>
-                </div>
-              </div>
-
-              <button
-                @click="drawTileForCurrentPlayer"
-                :disabled="(currentPlayer && currentPlayer.tiles.length >= 7) || game.tempPositions.value.length > 0"
-                class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg mb-2"
-              >
-                Draw Tile ({{ game.letterBag.value.length }} left)
-              </button>
-
-              <button
-                @click="game.clearTempLetters()"
-                class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-lg mb-2"
-              >
-                Clear
-              </button>
-
-              <button
-                @click="submitTurn"
-                :disabled="isValidating || game.tempPositions.value.length === 0"
-                class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg"
-              >
-                Submit Turn
-              </button>
-
-              <p v-if="statusMessage" class="mt-3 text-yellow-300 text-sm text-center">{{ statusMessage }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <!-- Game Board -->
+      <ScrabbleGameBoard
+        v-else-if="gameState === 'playing'"
+        :current-player-index="game.currentPlayerIndex.value"
+        :players="game.players.value"
+        :board="game.board.value"
+        :selected-tile-index="game.selectedTileIndex.value"
+        :temp-positions="game.tempPositions.value"
+        :game-letterbag="game.letterBag.value"
+        :current-round="game.currentRound.value"
+        :is-validating="isValidating"
+        :message="statusMessage"
+        :cell-class="getCellClass"
+        @submit-turn="submitTurn"
+        @clear-letters="game.clearTempLetters"
+        @draw-tile="drawTileForCurrentPlayer"
+        @select-tile="selectTile"
+        @cell-click="handleCellClick"
+        @reset="resetGame"
+        @home="handleHomeClick"
+      />
     </div>
   </ClickSpark>
 </template>
@@ -182,7 +72,6 @@ import type { ScrabblePlayer } from '../../../types/scrabble';
 import type { WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
-const { currentGradientClass } = useTheme();
 // Access shared header state
 const hideHeader = useState('hideHeader', () => false);
 
