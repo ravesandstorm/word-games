@@ -16,7 +16,7 @@ export default defineNuxtConfig({
       websocket: true,
     },
   },
-  ssr: true,
+  ssr: false, // For decoupled frontend and backend, we can disable SSR
   app: {
     head: {
       title: "Word Games - Play and Learn",

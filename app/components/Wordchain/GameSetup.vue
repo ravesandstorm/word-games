@@ -204,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player } from '../../types/game';
+import type { Player } from '../../../types/game';
 
 const { currentGradientClass } = useTheme();
 
