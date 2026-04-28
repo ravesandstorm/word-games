@@ -1,8 +1,8 @@
 # Welcome to Word Games!
 
-This repo contains a collection of word games built with Nuxt 4, Vue 3, TypeScript, Tailwind CSS, and Socket.IO.
+This repo contains a collection of word games built with Nuxt 4, Vue 3, TypeScript, Tailwind CSS, and Socket.IO for real time online gameplay.
 
-## [Live Demo](https://word-games-rave.onrender.com)
+## [Live on Render](https://word-games-rave.onrender.com)
 
 ## Multiplayer Games
 - Scrabble
@@ -22,23 +22,20 @@ Guess the 5-letter word in 6 attempts, try to achieve a high score by winning mu
 
 2. Development Mode
 ```bash
-cd web
-npm i
+pnpm install
 npm run dev
 ```
 
-3. Production Mode
+3. Production Mode (Render)
 ```bash
-cd web
-npm i
+pnpm install
 npm run build
 node .output/server/index.mjs
 ```
 
 4. Vercel Mode
 ```bash
-cd web
-npm i
+pnpm install
 # use scripts or node server directly
 npm run build:vercel
 npm run dev:vercel
