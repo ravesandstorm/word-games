@@ -27,7 +27,9 @@
             @click="navigateToGame(game.route)"
           >
             <!-- Game Image/Icon -->
-            <div class="h-48 bg-gradient-to-br overflow-hidden relative" :class="game.gradient">
+            <div
+                class="h-48 bg-gradient-to-br overflow-hidden relative rounded-2xl"
+                :class="game.gradient">
               <div class="absolute inset-0 flex items-center justify-center">
                 <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
                   {{ game.icon }}
@@ -63,16 +65,16 @@
               </h3>
               <p class="text-gray-300 text-sm mb-4">{{ game.tagline }}</p>
 
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
+              <div class="flex items-center justify-between w-full gap-4">
+                <div class="flex flex-col items-center">
                   <span class="text-yellow-400 text-sm">{{ game.difficulty }}</span>
-                  <span class="text-gray-400 text-xs">•</span>
+                  <span class="text-gray-500 text-sm mb-2">________</span>
                   <span class="text-gray-400 text-sm">{{ game.players }}</span>
                 </div>
-
+                <span class="text-gray-500 text-3xl">|</span>
                 <button
                   :class="[
-                    'px-4 py-2 rounded-lg font-semibold text-sm transition-all transform group-hover:scale-110',
+                    'px-3 py-3 rounded-xl font-semibold text-sm transition-all transform group-hover:scale-110',
                     getAccentColor,
                     'text-white'
                   ]"
@@ -170,7 +172,7 @@ const games = [
     gradient: 'from-green-600 to-teal-600',
     route: '/scrabble',
     difficulty: '⭐⭐⭐⭐',
-    players: '1-3 Players',
+    players: '2-4 Players',
     features: ['Classic', 'Multipliers', 'Tile Bag']
   },
   {
@@ -182,7 +184,7 @@ const games = [
     gradient: 'from-purple-600 to-blue-600',
     route: '/wordchain',
     difficulty: '⭐⭐⭐',
-    players: '1-4 Players',
+    players: '2-4 Players',
     features: ['Strategic', 'Multiplayer', 'Online']
   },
 ];
