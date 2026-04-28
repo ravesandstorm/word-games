@@ -22,141 +22,25 @@
     />
 
     <!-- Setup Screen -->
-    <div v-else-if="gameState === 'setup'" class="min-h-screen flex items-center justify-center p-4 relative">
-      <!-- LaserFlow Background Effect -->
-      <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
-        <LaserFlow
-          :beam-x-frac="0.5"
-          :beam-y-frac="0.5"
-          :h-len-factor="0.7"
-          :v-len-factor="0.7"
-          :decay="2.5"
-          :flow-speed="0.2"
-          :flow-strength="0.2"
-        />
-      </div>
-      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full shadow-2xl relative z-10">
-        <h2 class="text-3xl font-bold text-white mb-6">Game Setup</h2>
-
-        <!-- Online Room Section -->
-        <div v-if="isOnlineMode && !roomCode" class="mb-6 space-y-4">
-          <button
-            @click="createRoom"
-            :disabled="isCreatingRoom"
-            class="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-gray-600 text-white font-bold py-3 rounded-xl"
-          >
-            Create Room
-          </button>
-
-          <div class="flex gap-2">
-            <input
-              v-model="joinCode"
-              type="text"
-              placeholder="Enter room code"
-              class="flex-1 bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
-              maxlength="6"
-              @input="joinCode = joinCode.toUpperCase()"
-            />
-            <button
-              @click="joinRoom(joinCode)"
-              :disabled="!joinCode"
-              class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg"
-            >
-              Join
-            </button>
-          </div>
-        </div>
-
-        <!-- Room Code Display -->
-        <div v-if="isOnlineMode && roomCode" class="mb-6 bg-purple-500/30 rounded-xl p-4">
-          <p class="text-white font-semibold mb-2">Room Code:</p>
-          <div class="flex gap-2 mb-3">
-            <div class="flex-1 bg-white/20 text-white rounded-lg px-4 py-3 text-xl font-mono font-bold text-center">
-              {{ roomCode }}
-            </div>
-            <button
-              @click="copyRoomCode"
-              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
-              Copy
-            </button>
-          </div>
-
-          <div class="bg-white/10 rounded-lg p-3">
-            <div class="flex items-center justify-between">
-              <span class="text-white font-semibold">Players in Lobby:</span>
-              <span class="text-green-400 font-bold text-lg">{{ socket.roomPlayers.value.length }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Players List -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-2">
-            <label class="text-white font-semibold">Players (Max 3)</label>
-            <button
-              v-if="!isOnlineMode && game.players.value.length < 3"
-              @click="addPlayer"
-              :disabled="!isHost"
-              :class="[
-                'text-white rounded-lg px-3 py-1',
-                !isHost ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-              ]"
-            >
-              Add Player
-            </button>
-          </div>
-
-          <div class="space-y-2">
-            <div v-for="(player, index) in game.players.value" :key="index" class="flex gap-2">
-              <input
-                :value="player.name"
-                @input="updatePlayerName(index, ($event.target as HTMLInputElement).value)"
-                type="text"
-                :disabled="!isHost"
-                :class="[
-                  'flex-1 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
-                  !isHost ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
-                ]"
-              />
-              <button
-                v-if="!isOnlineMode && game.players.value.length > 1"
-                @click="removePlayer(index)"
-                :disabled="!isHost"
-                :class="[
-                  'text-white rounded-lg px-3 py-2',
-                  !isHost ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
-                ]"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-4">
-          <button
-            @click="backToMenu"
-            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-xl"
-          >
-            Back
-          </button>
-          <button
-            @click="startGame"
-            :disabled="!isHost"
-            :class="[
-              'flex-1 text-white font-bold py-3 rounded-xl',
-              !isHost ? 'bg-green-500/50 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-            ]"
-          >
-            {{ !isHost ? 'Waiting for Host...' : 'Start Game' }}
-          </button>
-        </div>
-
-        <p v-if="statusMessage" class="mt-4 text-yellow-300 font-semibold text-center">{{ statusMessage }}</p>
-      </div>
-    </div>
+    <ScrabbleGameSetup
+      v-else-if="gameState === 'setup'"
+      :is-online="isOnlineMode"
+      :room-code="roomCode"
+      :is-creating="isCreatingRoom"
+      :players="game.players.value"
+      :message="statusMessage"
+      :lobby-player-count="socket.roomPlayers.value.length"
+      :lobby-players="socket.roomPlayers.value"
+      :is-host="isHost"
+      @create-room="createRoom"
+      @join-room="joinRoom"
+      @copy-code="copyRoomCode"
+      @add-player="addPlayer"
+      @remove-player="removePlayer"
+      @update-player="updatePlayerName"
+      @start-game="startGame"
+      @back="backToMenu"
+    />
 
     <!-- Game Board -->
     <div v-else-if="gameState === 'playing'" class="p-4">
