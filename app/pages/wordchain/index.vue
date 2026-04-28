@@ -69,6 +69,9 @@
 import type { Player, Position, WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
+// Access shared header state
+const hideHeader = useState('hideHeader', () => false);
+
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
 const mongoAvailable = ref(false);
@@ -114,8 +117,15 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyPress);
 });
 
+// Watch game state to hide header when playing
+watch(gameState, (newState) => {
+  hideHeader.value = newState === 'playing';
+});
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
+  // Reset header state when leaving the component
+  hideHeader.value = false;
 });
 
 const handleKeyPress = (e: KeyboardEvent) => {

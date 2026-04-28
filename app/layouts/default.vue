@@ -1,7 +1,7 @@
 <template>
   <div :class="['min-h-screen bg-gradient-to-br transition-all duration-500 relative', currentGradientClass]">
     <!-- Header with Theme Selector -->
-    <header v-if="!route.meta.hideHeader" class="header">
+    <header v-if="!route.meta.hideHeader && !hideHeader" class="header">
       <div class="header-content">
         <div class="header-inner">
           <div>
@@ -32,6 +32,9 @@
 <script setup lang="ts">
   const route = useRoute();
   const { setTheme, currentGradientClass, currentTheme, themes } = useTheme();
+
+  // Shared state to dynamically hide header on certain pages
+  const hideHeader = useState('hideHeader', () => false);
 </script>
 
 <style scoped>

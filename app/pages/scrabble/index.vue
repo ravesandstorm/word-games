@@ -353,6 +353,8 @@ import type { WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
 const { currentGradientClass } = useTheme();
+// Access shared header state
+const hideHeader = useState('hideHeader', () => false);
 
 const gameState = ref<'menu' | 'setup' | 'playing'>('menu');
 const isOnlineMode = ref(false);
@@ -415,6 +417,16 @@ onMounted(() => {
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyPress);
   });
+});
+
+// Watch game state to hide header when playing
+watch(gameState, (newState) => {
+  hideHeader.value = newState === 'playing';
+});
+
+// Reset header state when leaving the component
+onUnmounted(() => {
+  hideHeader.value = false;
 });
 
 const moveSelection = (direction: string) => {
