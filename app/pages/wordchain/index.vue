@@ -1,69 +1,69 @@
 <template>
   <ClickSpark>
     <div>
-    <!-- Confirmation Modal -->
-    <ConfirmModal
-      :show="showExitConfirm"
-      title="Exit Game?"
-      message="Are you sure you want to exit? Your current game progress will be lost."
-      confirm-text="Exit"
-      @confirm="confirmExit"
-      @cancel="showExitConfirm = false"
-    />
+      <!-- Confirmation Modal -->
+      <ConfirmModal
+        :show="showExitConfirm"
+        title="Exit Game?"
+        message="Are you sure you want to exit? Your current game progress will be lost."
+        confirm-text="Exit"
+        @confirm="confirmExit"
+        @cancel="showExitConfirm = false"
+      />
 
-    <!-- Wordchain Main Menu -->
-    <WordchainMainMenu
-      v-if="gameState === 'menu'"
-      :mongo-available="mongoAvailable"
-      :dictionary-size="dictionarySize"
-      :message="statusMessage"
-      @local-game="startLocalSetup"
-      @online-game="startOnlineSetup"
-    />
+      <!-- Wordchain Main Menu -->
+      <WordchainMainMenu
+        v-if="gameState === 'menu'"
+        :mongo-available="mongoAvailable"
+        :dictionary-size="dictionarySize"
+        :message="statusMessage"
+        @local-game="startLocalSetup"
+        @online-game="startOnlineSetup"
+      />
 
-    <!-- Wordchain Game Setup -->
-    <WordchainGameSetup
-      v-else-if="gameState === 'setup'"
-      :is-online="isOnlineMode"
-      :room-code="roomCode"
-      :is-creating="isCreatingRoom"
-      :players="game.players.value"
-      :message="statusMessage"
-      :lobby-player-count="socket.roomPlayers.value.length"
-      :lobby-players="socket.roomPlayers.value"
-      :is-host="isHost"
-      @create-room="createRoom"
-      @join-room="joinRoom"
-      @copy-code="copyRoomCode"
-      @add-player="addPlayer"
-      @remove-player="removePlayer"
-      @update-player="updatePlayerName"
-      @start-game="startGame"
-      @back="backToMenu"
-    />
+      <!-- Wordchain Game Setup -->
+      <WordchainGameSetup
+        v-else-if="gameState === 'setup'"
+        :is-online="isOnlineMode"
+        :room-code="roomCode"
+        :is-creating="isCreatingRoom"
+        :players="game.players.value"
+        :message="statusMessage"
+        :lobby-player-count="socket.roomPlayers.value.length"
+        :lobby-players="socket.roomPlayers.value"
+        :is-host="isHost"
+        @create-room="createRoom"
+        @join-room="joinRoom"
+        @copy-code="copyRoomCode"
+        @add-player="addPlayer"
+        @remove-player="removePlayer"
+        @update-player="updatePlayerName"
+        @start-game="startGame"
+        @back="backToMenu"
+      />
 
-    <!-- Wordchain Game Board -->
-    <WordchainGameBoard
-      v-else-if="gameState === 'playing'"
-      :board="game.board.value"
-      :players="game.players.value"
-      :current-player-index="game.currentPlayerIndex.value"
-      :current-round="game.currentRound.value"
-      :selected-cell="game.selectedCell.value"
-      :letters-placed="game.lettersPlaced.value"
-      :current-limit="currentLetterLimit"
-      :is-validating="isValidating"
-      :message="statusMessage"
-      :room-code="roomCode"
-      :board-size="boardSize"
-      :used-words-count="game.usedWords.value.length"
-      :dictionary-size="dictionarySize"
-      @cell-click="handleCellClick"
-      @clear-letters="game.clearTempLetters"
-      @submit-turn="submitTurn"
-      @reset="resetGame"
-      @home="handleHomeClick"
-    />
+      <!-- Wordchain Game Board -->
+      <WordchainGameBoard
+        v-else-if="gameState === 'playing'"
+        :board="game.board.value"
+        :players="game.players.value"
+        :current-player-index="game.currentPlayerIndex.value"
+        :current-round="game.currentRound.value"
+        :selected-cell="game.selectedCell.value"
+        :letters-placed="game.lettersPlaced.value"
+        :current-limit="currentLetterLimit"
+        :is-validating="isValidating"
+        :message="statusMessage"
+        :room-code="roomCode"
+        :board-size="boardSize"
+        :used-words-count="game.usedWords.value.length"
+        :dictionary-size="dictionarySize"
+        @cell-click="handleCellClick"
+        @clear-letters="game.clearTempLetters"
+        @submit-turn="submitTurn"
+        @reset="resetGame"
+        @home="handleHomeClick"
+      />
     </div>
   </ClickSpark>
 </template>
