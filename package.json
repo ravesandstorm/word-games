@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "build:vercel": "nuxt build --preset vercel",
-    "dev:vercel": "nuxt dev --preset vercel",
+    "show": "node .output/server/index.mjs",
     "dev": "nuxt dev --host 0.0.0.0 --port 3003",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "clean": "rm -rf node_modules .nuxt dist .output"
+    "clean": "rm -rf node_modules .nuxt dist .output",
+    "build:vercel": "nuxt build --preset vercel",
+    "dev:vercel": "nuxt dev --preset vercel"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
