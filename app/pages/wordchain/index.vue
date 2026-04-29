@@ -20,7 +20,7 @@
         @cancel="showResetConfirm = false"
       />
 
-      <!-- Wordchain Main Menu -->
+      <!-- Main Menu -->
       <WordchainMainMenu
         v-if="gameState === 'menu'"
         :mongo-available="mongoAvailable"
@@ -30,7 +30,7 @@
         @online-setup="startOnlineSetup"
       />
 
-      <!-- Wordchain Game Setup -->
+      <!-- Game Setup -->
       <WordchainGameSetup
         v-else-if="gameState === 'setup'"
         :is-online="isOnlineMode"
@@ -41,17 +41,19 @@
         :lobby-player-count="socket.roomPlayers.value.length"
         :lobby-players="socket.roomPlayers.value"
         :is-host="isHost"
+        :local-player-id="currentPlayerId"
         @create-room="createRoom"
         @join-room="joinRoom"
         @copy-code="copyRoomCode"
         @add-player="addPlayer"
         @remove-player="removePlayer"
         @update-player="updatePlayerName"
+        @update-local-name="updateLocalName"
         @start-game="startGame"
         @back="backToMenu"
       />
 
-      <!-- Wordchain Game Board -->
+      <!-- Game Board -->
       <WordchainGameBoard
         v-else-if="gameState === 'playing'"
         :board="game.board.value"
@@ -63,6 +65,8 @@
         :current-limit="currentLetterLimit"
         :is-validating="isValidating"
         :message="statusMessage"
+        :is-online="isOnlineMode"
+        :local-player-id="currentPlayerId"
         :room-code="roomCode"
         :board-size="boardSize"
         :used-words-count="game.usedWords.value.length"
@@ -78,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Player, Position, WordValidationResponse } from '../../../types/game';
+import type { GameState, Player, Position, WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
 // Access shared header state
@@ -135,6 +139,12 @@ watch(gameState, (newState) => {
   hideHeader.value = newState === 'playing';
 });
 
+const isMyTurn = computed(() => {
+  if (!isOnlineMode.value) return true;
+  const currPlayer = game.players.value[game.currentPlayerIndex.value];
+  return currPlayer?.id === currentPlayerId.value;
+});
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress);
   // Reset header state when leaving the component
@@ -143,6 +153,7 @@ onUnmounted(() => {
 
 const handleKeyPress = (e: KeyboardEvent) => {
   if (gameState.value !== 'playing' || !game.selectedCell.value) return;
+  if (!isMyTurn.value) return; // Prevent keyboard inputs if not my turn
 
   const key = e.key.toUpperCase();
 
@@ -271,6 +282,14 @@ const updatePlayerName = (index: number, name: string) => {
   console.log(`[SCRABBLE] Updated: ${name}`);
 };
 
+const updateLocalName = (name: string) => {
+  if (isOnlineMode.value && roomCode.value) {
+    socket.updatePlayer(roomCode.value, currentPlayerId.value, name);
+  } else {
+    game.players.value[0]!.name = name;
+  }
+};
+
 const startGame = (settings: any) => {
   console.log('[GAME] Starting with settings:', settings);
   boardSize.value = settings.boardSize;
@@ -290,6 +309,7 @@ const startGame = (settings: any) => {
     socket.updateGameState(roomCode.value, {
       status: 'playing',
       board: game.board.value,
+      players: game.players.value,
       currentPlayerIndex: game.currentPlayerIndex.value,
       currentRound: game.currentRound.value,
       usedWords: game.usedWords.value
@@ -304,11 +324,11 @@ watch(() => socket.gameState.value, (newState) => {
       if (gameState.value !== 'playing') {
         gameState.value = 'playing'; // Change screens for non-hosts
       }
-      game.board.value = newState.board as any;
-      game.players.value = newState.players as any;
-      game.currentPlayerIndex.value = newState.currentPlayerIndex;
-      game.currentRound.value = newState.currentRound;
-      game.usedWords.value = newState.usedWords;
+      if (newState.board) game.board.value = newState.board as GameState['board'];
+      if (newState.players) game.players.value = newState.players as GameState['players'];
+      if (newState.currentPlayerIndex) game.currentPlayerIndex.value = newState.currentPlayerIndex as GameState['currentPlayerIndex'];
+      if (newState.currentRound) game.currentRound.value = newState.currentRound as GameState['currentRound'];
+      if (newState.usedWords) game.usedWords.value = newState.usedWords as GameState['usedWords'];
     }
   }
 }, { deep: true });
@@ -480,10 +500,9 @@ const submitTurn = async () => {
       socket.updateGameState(roomCode.value, {
         status: 'playing',
         board: game.board.value,
-        // players: game.players.value,
+        players: game.players.value,
         currentPlayerIndex: game.currentPlayerIndex.value,
         currentRound: game.currentRound.value,
-        // letterBag: game.letterBag.value,
         usedWords: game.usedWords.value
       });
     }

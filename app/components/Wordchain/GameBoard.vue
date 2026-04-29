@@ -64,7 +64,7 @@
           <div class="flex gap-2">
             <button
               @click="$emit('clear-letters')"
-              :disabled="lettersPlaced === 0"
+              :disabled="lettersPlaced === 0 || !isMyTurn"
               class="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -74,7 +74,7 @@
             </button>
             <button
               @click="$emit('submit-turn')"
-              :disabled="lettersPlaced === 0 || isValidating"
+              :disabled="lettersPlaced === 0 || isValidating || !isMyTurn"
               class="bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg flex items-center gap-2"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,9 +101,10 @@
             <div
               v-for="(cell, index) in flatBoard"
               :key="index"
-              @click="$emit('cell-click', Math.floor(index / boardSize), index % boardSize)"
+              @click="isMyTurn ? $emit('cell-click', Math.floor(index / boardSize), index % boardSize) : null"
               :class="[
-                'w-8 h-8 flex items-center justify-center text-sm font-bold cursor-pointer border-2 transition-all',
+                'w-8 h-8 flex items-center justify-center text-sm font-bold border-2 transition-all',
+                isMyTurn ? 'cursor-pointer hover:bg-gray-600' : 'cursor-not-allowed',
                 cell.isPermanent ? 'bg-blue-500 text-white border-blue-600' :
                 cell.isTemp ? 'bg-yellow-400 text-gray-900 border-yellow-500' :
                 'bg-gray-700 text-gray-400 border-gray-600',
@@ -148,6 +149,8 @@ const props = defineProps<{
   currentLimit: number;
   isValidating: boolean;
   message?: string;
+  isOnline?: boolean;
+  localPlayerId?: string;
   roomCode?: string;
   boardSize: number;
   usedWordsCount: number;
@@ -162,13 +165,21 @@ defineEmits<{
   'home': [];
 }>();
 
-const currentPlayer = computed(() => props.players[props.currentPlayerIndex]);
+const currentPlayer = computed(() => {
+  if (!props.players || props.players.length === 0) return null;
+  return props.players[props.currentPlayerIndex] || props.players[0];
+});
 
-const flatBoard = computed(() => {
-  return props.board.flat();
+const isMyTurn = computed(() => {
+  if (!props.isOnline) return true;
+  return currentPlayer.value?.id === props.localPlayerId;
 });
 
 const isSelected = (row: number, col: number) => {
   return props.selectedCell?.row === row && props.selectedCell?.col === col;
 };
+
+const flatBoard = computed(() => {
+  return props.board.flat();
+});
 </script>
