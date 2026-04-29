@@ -70,9 +70,9 @@
       <!-- Players List (Local) -->
       <div class="mb-6">
         <div class="flex justify-between items-center mb-2">
-          <label class="text-white font-semibold">Players (Max 3)</label>
+          <label class="text-white font-semibold">Players (Max 4)</label>
           <button
-            v-if="!isOnline && players.length < 3"
+            v-if="!isOnline && players.length < 4"
             @click="$emit('add-player')"
             :disabled="!isHost"
             :class="[
@@ -85,7 +85,7 @@
         </div>
 
         <div class="space-y-2">
-          <div v-for="(player, index) in players" :key="index" class="flex gap-2">
+          <div v-for="(player, index) in (isOnline ? lobbyPlayers : players)" :key="index" class="flex gap-2">
             <input
               :value="player.name"
               @input="$emit('update-player', index, ($event.target as HTMLInputElement).value)"
@@ -140,12 +140,6 @@
 import type { Player } from '../../../types/game';
 
 const { currentGradientClass } = useTheme();
-
-interface GameSettings {
-  boardSize: number;
-  maxLettersPerTurn: number;
-  roundsPerIncrement: number;
-}
 
 const props = defineProps<{
   isOnline: boolean;
