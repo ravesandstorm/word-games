@@ -1,7 +1,7 @@
 <template>
     <div :class="[currentGradientClass, 'min-h-screen flex items-center justify-center p-4 relative']">
       <!-- LaserFlow Background Effect -->
-      <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
+      <!-- <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
         <LaserFlow
           :beam-x-frac="0.5"
           :beam-y-frac="0.5"
@@ -11,7 +11,7 @@
           :flow-speed="0.2"
           :flow-strength="0.2"
         />
-      </div>
+      </div> -->
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full shadow-2xl relative z-10">
         <h1 class="text-4xl font-bold text-white mb-8 text-center">Scrabble</h1>
 

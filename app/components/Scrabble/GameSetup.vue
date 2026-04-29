@@ -1,7 +1,7 @@
 <template>
   <div :class="[currentGradientClass, 'min-h-screen flex items-center justify-center p-4 relative']">
     <!-- LaserFlow Background Effect -->
-    <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
+    <!-- <div class="fixed inset-0 z-0 opacity-15 pointer-events-none">
       <LaserFlow
         :beam-x-frac="0.5"
         :beam-y-frac="0.5"
@@ -11,7 +11,7 @@
         :flow-speed="0.2"
         :flow-strength="0.2"
       />
-    </div>
+    </div> -->
     <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl w-full shadow-2xl relative z-10">
       <h2 class="text-3xl font-bold text-white mb-6">Game Setup</h2>
 
@@ -25,19 +25,19 @@
           Create Room
         </button>
 
-        <div class="flex gap-2">
+        <div class="flex w-full gap-2 pt-2">
           <input
             v-model="joinCode"
             type="text"
             placeholder="Enter room code"
-            class="flex-1 bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
+            class="flex-1 min-w-0 bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
             maxlength="6"
             @input="joinCode = joinCode.toUpperCase()"
           />
           <button
             @click="$emit('join-room', joinCode)"
             :disabled="!joinCode"
-            class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg"
+            class="shrink-0 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg"
           >
             Join
           </button>
@@ -59,12 +59,25 @@
           </button>
         </div>
 
+        <!-- Lobby Player Count -->
         <div class="bg-white/10 rounded-lg p-3">
           <div class="flex items-center justify-between">
             <span class="text-white font-semibold">Players in Lobby:</span>
             <span class="text-green-400 font-bold text-lg">{{ lobbyPlayerCount }}</span>
           </div>
         </div>
+      </div>
+
+      <!-- Your Name Section -->
+      <div class="mb-6">
+        <label class="text-white font-semibold mb-2 block">Your Name</label>
+        <input
+          :value="localPlayerName"
+          @change="$emit('update-local-name', ($event.target as HTMLInputElement).value)"
+          type="text"
+          class="w-full bg-white/20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 placeholder-gray-400"
+          placeholder="Enter your name"
+        />
       </div>
 
       <!-- Players List (Local) -->
@@ -90,10 +103,10 @@
               :value="player.name"
               @input="$emit('update-player', index, ($event.target as HTMLInputElement).value)"
               type="text"
-              :disabled="!isHost"
+              :disabled="isOnline || !isHost"
               :class="[
                 'flex-1 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400',
-                !isHost ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
+                (isOnline || !isHost) ? 'bg-white/10 cursor-not-allowed' : 'bg-white/20'
               ]"
             />
             <button
@@ -150,9 +163,18 @@ const props = defineProps<{
   lobbyPlayerCount: number | 0;
   lobbyPlayers: Player[];
   isHost?: boolean;
+  localPlayerId?: string;
 }>();
 
 const joinCode = ref('');
+
+const localPlayerName = computed(() => {
+  if (props.isOnline) {
+    const p = props.lobbyPlayers.find(p => p.id === props.localPlayerId);
+    return p ? p.name : '';
+  }
+  return props.players[0]?.name || '';
+});
 
 defineEmits<{
   'create-room': [];
@@ -161,6 +183,7 @@ defineEmits<{
   'add-player': [];
   'remove-player': [index: number];
   'update-player': [index: number, name: string];
+  'update-local-name': [name: string];
   'start-game': [];
   'back': [];
 }>();

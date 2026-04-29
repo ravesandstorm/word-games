@@ -1,7 +1,6 @@
 <template>
   <div :class="[currentGradientClass, 'min-h-screen p-4']">
-    <!-- LaserFlow Background Effect (Commented Out) -->
-    <!-- Uncomment below to enable LaserFlow effect on game board -->
+    <!-- LaserFlow Background Effect -->
     <!-- <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
       <LaserFlow
         :beam-x-frac="0.5"
@@ -51,7 +50,7 @@
           >
             <p class="text-white font-semibold">{{ player.name }}</p>
             <p class="text-green-400 text-2xl font-bold">{{ player.score }}</p>
-            <p class="text-gray-300 text-sm">{{ player.tiles.length }} tiles</p>
+            <p class="text-gray-300 text-sm">{{ player.tiles?.length || 0 }} tiles</p>
           </div>
         </div>
       </div>
@@ -87,12 +86,13 @@
             <h3 class="text-white font-bold mb-3">Your Tiles</h3>
             <div class="grid grid-cols-4 gap-2 mb-4">
               <div
-                v-for="(tile, index) in currentPlayer?.tiles"
+                v-for="(tile, index) in viewingPlayer?.tiles"
                 :key="index"
-                @click="$emit('select-tile', index)"
+                @click="isMyTurn ? $emit('select-tile', index) : null"
                 :class="[
-                  'aspect-square bg-yellow-100 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all',
-                  selectedTileIndex === index ? 'ring-2 ring-blue-400 scale-110' : 'hover:scale-105'
+                  'aspect-square bg-yellow-100 rounded-lg flex flex-col items-center justify-center transition-all',
+                  !isMyTurn ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer',
+                  selectedTileIndex === index ? 'ring-2 ring-blue-400 scale-110' : (isMyTurn ? 'hover:scale-105' : '')
                 ]"
               >
                 <span class="text-xl font-bold text-gray-900">{{ tile.letter || '?' }}</span>
@@ -102,22 +102,23 @@
 
             <button
               @click="$emit('draw-tile')"
-              :disabled="(currentPlayer && currentPlayer.tiles.length >= 7) || tempPositions.length > 0"
+              :disabled="!isMyTurn || (viewingPlayer && viewingPlayer.tiles.length >= 7) || tempPositions.length > 0"
               class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg mb-2"
             >
-              Draw Tile ({{ gameLetterbag.length }} left)
+              Draw Tile ({{ gameLetterbag?.length || 0 }} left)
             </button>
 
             <button
               @click="$emit('clear-letters')"
-              class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 rounded-lg mb-2"
+              :disabled="!isMyTurn"
+              class="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg mb-2"
             >
               Clear
             </button>
 
             <button
               @click="$emit('submit-turn')"
-              :disabled="isValidating || tempPositions.length === 0"
+              :disabled="!isMyTurn || isValidating || tempPositions.length === 0"
               class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg"
             >
               Submit Turn
@@ -144,6 +145,8 @@ const props = defineProps<{
   currentRound: number;
   isValidating: boolean;
   message?: string;
+  isOnline?: boolean;
+  localPlayerId?: string;
   selectedTileIndex: number | null;
   tempPositions: Position[];
   gameLetterbag: ScrabbleTile[];
@@ -160,9 +163,26 @@ defineEmits<{
   'draw-tile': [];
 }>();
 
-const currentPlayer = computed(() => props.players[props.currentPlayerIndex]);
+const currentPlayer = computed(() => {
+  if (!props.players || props.players.length === 0) return null;
+  return props.players[props.currentPlayerIndex] || props.players[0];
+});
+
+const viewingPlayer = computed(() => {
+  if (!props.players || props.players.length === 0) return null;
+  if (props.isOnline && props.localPlayerId) {
+    return props.players.find(p => p.id === props.localPlayerId) || props.players[0];
+  }
+  return currentPlayer.value;
+});
+
+const isMyTurn = computed(() => {
+  if (!props.isOnline) return true;
+  return currentPlayer.value?.id === props.localPlayerId;
+});
 
 const flatBoard = computed(() => {
+  if (!props.board) return [];
   return props.board.flat();
 });
 </script>

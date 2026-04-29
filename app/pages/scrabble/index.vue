@@ -41,12 +41,14 @@
         :lobby-player-count="socket.roomPlayers.value.length"
         :lobby-players="socket.roomPlayers.value"
         :is-host="isHost"
+        :local-player-id="currentPlayerId"
         @create-room="createRoom"
         @join-room="joinRoom"
         @copy-code="copyRoomCode"
         @add-player="addPlayer"
         @remove-player="removePlayer"
         @update-player="updatePlayerName"
+        @update-local-name="updateLocalName"
         @start-game="startGame"
         @back="backToMenu"
       />
@@ -63,6 +65,8 @@
         :current-round="game.currentRound.value"
         :is-validating="isValidating"
         :message="statusMessage"
+        :is-online="isOnlineMode"
+        :local-player-id="currentPlayerId"
         :cell-class="getCellClass"
         @submit-turn="submitTurn"
         @clear-letters="game.clearTempLetters"
@@ -77,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ScrabblePlayer } from '../../../types/scrabble';
+import type { ScrabbleGameState, ScrabblePlayer } from '../../../types/scrabble';
 import type { WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
@@ -307,6 +311,14 @@ const updatePlayerName = (index: number, name: string) => {
   console.log(`[SCRABBLE] Updated: ${name}`);
 };
 
+const updateLocalName = (name: string) => {
+  if (isOnlineMode.value && roomCode.value) {
+    socket.updatePlayer(roomCode.value, currentPlayerId.value, name);
+  } else {
+    game.players.value[0]!.name = name;
+  }
+};
+
 const startGame = () => {
   console.log('[SCRABBLE] Starting game');
   game.initializeBoard();
@@ -329,8 +341,10 @@ const startGame = () => {
     socket.updateGameState(roomCode.value, {
       status: 'playing',
       board: game.board.value,
+      players: game.players.value,
       currentPlayerIndex: game.currentPlayerIndex.value,
       currentRound: game.currentRound.value,
+      letterBag: game.letterBag.value,
       usedWords: game.usedWords.value
     });
   }
@@ -343,12 +357,13 @@ watch(() => socket.gameState.value, (newState) => {
       if (gameState.value !== 'playing') {
         gameState.value = 'playing'; // Change screens for non-hosts
       }
-      game.board.value = newState.board as any;
-      // game.players.value = newState.players as any;
-      game.currentPlayerIndex.value = newState.currentPlayerIndex;
-      game.currentRound.value = newState.currentRound;
-      // game.letterBag.value = newState.letterBag;
-      game.usedWords.value = newState.usedWords;
+      // Prevent undefined properties from destroying local refs
+      if (newState.board) game.board.value = newState.board as ScrabbleGameState['board'];
+      if (newState.players) game.players.value = newState.players as ScrabbleGameState['players'];
+      if (newState.currentPlayerIndex !== undefined) game.currentPlayerIndex.value = newState.currentPlayerIndex as ScrabbleGameState['currentPlayerIndex'];
+      if (newState.currentRound !== undefined) game.currentRound.value = newState.currentRound as ScrabbleGameState['currentRound'];
+      if (newState.letterBag) game.letterBag.value = newState.letterBag as ScrabbleGameState['letterBag'];
+      if (newState.usedWords) game.usedWords.value = newState.usedWords as ScrabbleGameState['usedWords'];
     }
   }
 }, { deep: true });
