@@ -1,3 +1,5 @@
+import type { ScrabbleTile } from "./scrabble";
+
 export interface Player {
   id: string;
   name: string;
@@ -20,6 +22,9 @@ export interface GameState {
   roundsPerIncrement: number;
   status: 'waiting' | 'playing' | 'finished';
   usedWords: string[];
+  players: Player[];
+  // letterBag is optional because it exists only for Scrabble
+  letterBag?: ScrabbleTile[];
 }
 
 export interface Room {

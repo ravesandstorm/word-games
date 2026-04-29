@@ -305,10 +305,9 @@ watch(() => socket.gameState.value, (newState) => {
         gameState.value = 'playing'; // Change screens for non-hosts
       }
       game.board.value = newState.board as any;
-      // game.players.value = newState.players as any;
+      game.players.value = newState.players as any;
       game.currentPlayerIndex.value = newState.currentPlayerIndex;
       game.currentRound.value = newState.currentRound;
-      // game.letterBag.value = newState.letterBag;
       game.usedWords.value = newState.usedWords;
     }
   }
@@ -441,6 +440,8 @@ const submitTurn = async () => {
     // Add score
     game.players.value[game.currentPlayerIndex.value]!.score += longestLength;
     console.log(`[SUBMIT] New score: ${game.players.value[game.currentPlayerIndex.value]!.score}`);
+
+    statusMessage.value = `+${longestLength} points for "${longestWord}"!`;
 
     // Mark words as used
     result.validWords.forEach(w => {

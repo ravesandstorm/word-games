@@ -484,7 +484,7 @@ const submitTurn = async () => {
     const tilesUsed = game.tempPositions.value.length;
     game.drawTilesForPlayer(game.currentPlayerIndex.value, tilesUsed);
 
-    statusMessage.value = `+${score} points!`;
+    statusMessage.value = `+${score} points for "${result.longestValid}"!`;
 
     // Next player
     game.currentPlayerIndex.value = (game.currentPlayerIndex.value + 1) % game.players.value.length;
@@ -497,10 +497,10 @@ const submitTurn = async () => {
       socket.updateGameState(roomCode.value, {
         status: 'playing',
         board: game.board.value,
-        // players: game.players.value,
+        players: game.players.value,
         currentPlayerIndex: game.currentPlayerIndex.value,
         currentRound: game.currentRound.value,
-        // letterBag: game.letterBag.value,
+        letterBag: game.letterBag.value,
         usedWords: game.usedWords.value
       });
     }
