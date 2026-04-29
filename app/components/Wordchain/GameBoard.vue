@@ -117,9 +117,19 @@
           </div>
         </div>
       </div>
+
+
       
       <!-- Game Info -->
       <div class="mt-4 bg-white/10 backdrop-blur-lg rounded-xl p-4">
+        <button
+          @click="$emit('skip-turn')"
+          :disabled="!isMyTurn || isValidating"
+          class="w-full mt-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg"
+        >
+          Skip Turn
+        </button>
+
         <p class="text-white text-sm text-center mb-2">
           <span class="font-bold">Controls:</span> Arrow keys to move | Type letters to place | Backspace to delete
         </p>
@@ -161,6 +171,7 @@ defineEmits<{
   'cell-click': [row: number, col: number];
   'clear-letters': [];
   'submit-turn': [];
+  'skip-turn': [];
   'reset': [];
   'home': [];
 }>();

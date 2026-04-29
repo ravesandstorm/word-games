@@ -20,6 +20,15 @@
         @cancel="showResetConfirm = false"
       />
 
+      <ConfirmModal
+        :show="showSkipConfirm"
+        title="Skip Turn?"
+        message="Are you sure you want to skip your turn?"
+        confirm-text="Skip"
+        @confirm="confirmSkipTurn"
+        @cancel="showSkipConfirm = false"
+      />
+
       <!-- Main Menu -->
       <WordchainMainMenu
         v-if="gameState === 'menu'"
@@ -72,8 +81,9 @@
         :used-words-count="game.usedWords.value.length"
         :dictionary-size="dictionarySize"
         @cell-click="handleCellClick"
-        @clear-letters="game.clearTempLetters"
+        @clear-letters="handleClearLetters"
         @submit-turn="submitTurn"
+        @skip-turn="skipTurn"
         @reset="resetGame"
         @home="handleHomeClick"
       />
@@ -98,6 +108,7 @@ const statusMessage = ref('');
 const isValidating = ref(false);
 const showExitConfirm = ref(false);
 const showResetConfirm = ref(false);
+const showSkipConfirm = ref(false);
 
 const boardSize = ref(15);
 const maxLettersPerTurn = ref(3);
@@ -106,7 +117,7 @@ const roundsPerIncrement = ref(6);
 const game = useGame();
 const validation = useWordValidation();
 const socket = useSocket();
-const currentPlayerId = ref('player-' + Date.now());
+const currentPlayerId = ref('player-' + Date.now() + Math.floor(Math.random() * 1000000).toString());
 const hostId = ref<string | null>(null);
 
 // Computed property to check if current player is host
@@ -129,11 +140,6 @@ onMounted(async () => {
   }
 });
 
-// Keyboard controls
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyPress);
-});
-
 // Watch game state to hide header when playing
 watch(gameState, (newState) => {
   hideHeader.value = newState === 'playing';
@@ -145,18 +151,13 @@ const isMyTurn = computed(() => {
   return currPlayer?.id === currentPlayerId.value;
 });
 
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyPress);
-  // Reset header state when leaving the component
-  hideHeader.value = false;
-});
-
 const handleKeyPress = (e: KeyboardEvent) => {
   if (gameState.value !== 'playing' || !game.selectedCell.value) return;
   if (!isMyTurn.value) return; // Prevent keyboard inputs if not my turn
 
   const key = e.key.toUpperCase();
 
+  // State is broadcasted on letter addition or removal
   if (key === 'ARROWUP' || key === 'ARROWDOWN' || key === 'ARROWLEFT' || key === 'ARROWRIGHT') {
     e.preventDefault();
     console.log(`[INPUT] Arrow key: ${key}`);
@@ -165,11 +166,44 @@ const handleKeyPress = (e: KeyboardEvent) => {
     e.preventDefault();
     console.log('[INPUT] Backspace');
     removeLetterAtCell();
+    broadcastGameState();
   } else if (key.length === 1 && key.match(/[A-Z]/)) {
     e.preventDefault();
     console.log(`[INPUT] Letter: ${key}`);
     game.placeLetter(key, currentLetterLimit.value);
+    broadcastGameState();
   }
+};
+
+// Keyboard controls
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyPress);
+});
+
+// Reset header state when leaving the component
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress);
+  hideHeader.value = false;
+});
+
+// Helper to broadcast state instantly
+const broadcastGameState = () => {
+  if (isOnlineMode.value && roomCode.value) {
+    socket.updateGameState(roomCode.value, {
+      status: 'playing',
+      board: game.board.value,
+      players: game.players.value,
+      currentPlayerIndex: game.currentPlayerIndex.value,
+      currentRound: game.currentRound.value,
+      usedWords: game.usedWords.value
+    });
+  }
+};
+
+// Handle explicit clears
+const handleClearLetters = () => {
+  game.clearTempLetters();
+  broadcastGameState();
 };
 
 const currentLetterLimit = computed(() => {
@@ -323,7 +357,20 @@ watch(() => socket.gameState.value, (newState) => {
     if (newState.status === 'playing') {
       if (gameState.value !== 'playing') {
         gameState.value = 'playing'; // Change screens for non-hosts
+        // Force initialize non-host players array properly
+        if (game.players.value.length <= 1) {
+          game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [], score: 0 })) as Player[];
+        }
       }
+
+      // Ensure player names stay mapped (in case backend GameState scrubs non-schema parts)
+      if (socket.roomPlayers.value?.length > 0) {
+        game.players.value.forEach(p => {
+          const lobbyMatch = socket.roomPlayers.value.find(rp => rp.id === p.id);
+          if (lobbyMatch) p.name = lobbyMatch.name;
+        });
+      }
+
       if (newState.board) game.board.value = newState.board as GameState['board'];
       if (newState.players) game.players.value = newState.players as GameState['players'];
       if (newState.currentPlayerIndex) game.currentPlayerIndex.value = newState.currentPlayerIndex as GameState['currentPlayerIndex'];
@@ -406,6 +453,8 @@ const removeLetterAtCell = () => {
   game.tempPositions.value = game.tempPositions.value.filter(
     (p: Position) => p.row !== pos.row || p.col !== pos.col
   );
+
+  broadcastGameState();
 };
 
 const submitTurn = async () => {
@@ -538,4 +587,29 @@ const confirmResetGame = () => {
   game.players.value.forEach((p: Player) => p.score = 0);
   showResetConfirm.value = false;
 };
+
+const skipTurn = () => {
+  // Enforce server-side matching turn
+  if (isOnlineMode.value && game.players.value[game.currentPlayerIndex.value]?.id !== currentPlayerId.value) {
+    statusMessage.value = "It's not your turn!";
+    setTimeout(() => statusMessage.value = '', 2000);
+    return;
+  }
+
+  if (gameState.value === 'playing') {
+    showSkipConfirm.value = true;
+  }
+};
+
+const confirmSkipTurn = () => {
+  console.log('[WORDCHAIN] Skipping turn');
+  game.currentPlayerIndex.value = (game.currentPlayerIndex.value + 1) % game.players.value.length;
+
+  if (game.currentPlayerIndex.value === 0) {
+    game.currentRound.value++;
+  }
+
+  broadcastGameState();
+  showSkipConfirm.value = false;
+}
 </script>

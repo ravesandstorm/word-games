@@ -140,7 +140,7 @@
         <!-- Local Players -->
         <div>
           <div class="flex justify-between items-center mb-2">
-            <label class="text-white font-semibold">Players (Max 4)</label>
+            <label v-if="players.length > 1" class="text-white font-semibold">Players (Max 4)</label>
             <button
               @click="$emit('add-player')"
               :disabled="!isHost"
