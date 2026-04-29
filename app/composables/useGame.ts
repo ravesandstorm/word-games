@@ -3,10 +3,10 @@ import type { Cell, Player, Position } from '../../types/game';
 export function useGame() {
   const board = ref<Cell[][]>([]);
   const players = ref<Player[]>([{ 
-    id: 'local-1', 
-    name: 'Player 1', 
-    score: 0, 
-    isLocal: true 
+    id: 'local-1',
+    name: 'Player',
+    score: 0,
+    isLocal: true
   }]);
   const currentPlayerIndex = ref(0);
   const currentRound = ref(1);

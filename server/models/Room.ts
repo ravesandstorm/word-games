@@ -23,4 +23,4 @@ const roomSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: 7200 }
 });
 
-export const Room = mongoose.models.Room || mongoose.model<RoomType>('Room', roomSchema);
+export const Room = mongoose.model<RoomType>('Room', roomSchema);

@@ -6,9 +6,9 @@ import letterCountsData from '../../public/letterCounts.json';
 export function useScrabble() {
   const board = ref<ScrabbleCell[][]>([]);
   const players = ref<ScrabblePlayer[]>([{ 
-    id: 'local-1', 
-    name: 'Player 1', 
-    score: 0, 
+    id: 'local-1',
+    name: 'Player',
+    score: 0,
     isLocal: true,
     tiles: []
   }]);
