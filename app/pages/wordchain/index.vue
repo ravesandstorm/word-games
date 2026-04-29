@@ -260,8 +260,15 @@ const removePlayer = (index: number) => {
 };
 
 const updatePlayerName = (index: number, name: string) => {
-  game.players.value[index]!.name = name;
-  console.log(`[PLAYER] Updated: ${name}`);
+  if (isOnlineMode.value && roomCode.value) {
+    const player = socket.roomPlayers.value[index];
+    if (player) {
+      socket.updatePlayer(roomCode.value, player.id, name);
+    }
+  } else {
+    game.players.value[index]!.name = name;
+  }
+  console.log(`[SCRABBLE] Updated: ${name}`);
 };
 
 const startGame = (settings: any) => {
@@ -269,10 +276,43 @@ const startGame = (settings: any) => {
   boardSize.value = settings.boardSize;
   maxLettersPerTurn.value = settings.maxLettersPerTurn;
   roundsPerIncrement.value = settings.roundsPerIncrement;
+
+  // Load online players into game instance properly
+  if (isOnlineMode.value && socket.roomPlayers.value.length > 0) {
+    game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [] })) as Player[];
+  }
   
   game.initializeBoard(settings.boardSize);
   gameState.value = 'playing';
+
+  // Issue the layout and player info to non-hosts
+  if (isOnlineMode.value && roomCode.value) {
+    socket.updateGameState(roomCode.value, {
+      status: 'playing',
+      board: game.board.value,
+      currentPlayerIndex: game.currentPlayerIndex.value,
+      currentRound: game.currentRound.value,
+      usedWords: game.usedWords.value
+    });
+  }
 };
+
+// Monitor the server explicitly for updates (sync state mapping)
+watch(() => socket.gameState.value, (newState) => {
+  if (isOnlineMode.value && newState) {
+    if (newState.status === 'playing') {
+      if (gameState.value !== 'playing') {
+        gameState.value = 'playing'; // Change screens for non-hosts
+      }
+      game.board.value = newState.board as any;
+      // game.players.value = newState.players as any;
+      game.currentPlayerIndex.value = newState.currentPlayerIndex;
+      game.currentRound.value = newState.currentRound;
+      // game.letterBag.value = newState.letterBag;
+      game.usedWords.value = newState.usedWords;
+    }
+  }
+}, { deep: true });
 
 const backToMenu = () => {
   console.log('[APP] Back to menu');
@@ -433,6 +473,18 @@ const submitTurn = async () => {
     if (game.currentPlayerIndex.value === 0) {
       game.currentRound.value++;
       console.log(`[SUBMIT] Round ${game.currentRound.value} starting`);
+    }
+
+    if (isOnlineMode.value && roomCode.value) {
+      socket.updateGameState(roomCode.value, {
+        status: 'playing',
+        board: game.board.value,
+        // players: game.players.value,
+        currentPlayerIndex: game.currentPlayerIndex.value,
+        currentRound: game.currentRound.value,
+        // letterBag: game.letterBag.value,
+        usedWords: game.usedWords.value
+      });
     }
 
     console.log('[SUBMIT] ========== TURN COMPLETE ==========');
