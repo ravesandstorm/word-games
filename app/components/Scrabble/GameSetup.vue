@@ -83,7 +83,7 @@
       <!-- Players List (Local) -->
       <div class="mb-6">
         <div class="flex justify-between items-center mb-2">
-          <label class="text-white font-semibold">Players (Max 4)</label>
+          <label v-if="players.length > 1" class="text-white font-semibold">Players (Max 4)</label>
           <button
             v-if="!isOnline && players.length < 4"
             @click="$emit('add-player')"

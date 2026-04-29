@@ -80,10 +80,11 @@
           </div>
         </div>
 
-        <!-- Player Tiles -->
+        <!-- Player Bottom Section -->
         <div class="lg:col-span-1">
           <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4">
             <h3 class="text-white font-bold mb-3">Your Tiles</h3>
+            <!-- Player Tiles -->
             <div class="grid grid-cols-4 gap-2 mb-4">
               <div
                 v-for="(tile, index) in viewingPlayer?.tiles"
@@ -124,6 +125,14 @@
               Submit Turn
             </button>
 
+            <button
+              @click="$emit('skip-turn')"
+              :disabled="!isMyTurn || isValidating"
+              class="w-full mt-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-500 text-white font-bold py-2 rounded-lg"
+            >
+              Skip Turn
+            </button>
+
             <p v-if="message" class="mt-3 text-yellow-300 text-sm text-center">{{ message }}</p>
           </div>
         </div>
@@ -157,6 +166,7 @@ defineEmits<{
   'cell-click': [row: number, col: number];
   'clear-letters': [];
   'submit-turn': [];
+  'skip-turn': [];
   'reset': [];
   'home': [];
   'select-tile': [index: number];

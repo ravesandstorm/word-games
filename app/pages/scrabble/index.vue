@@ -20,6 +20,15 @@
         @cancel="showResetConfirm = false"
       />
 
+      <ConfirmModal
+        :show="showSkipConfirm"
+        title="Skip Turn?"
+        message="Are you sure you want to skip your turn?"
+        confirm-text="Skip"
+        @confirm="confirmSkipTurn"
+        @cancel="showSkipConfirm = false"
+      />
+
       <!-- Main Menu -->
       <ScrabbleMainMenu
         v-if="gameState === 'menu'"
@@ -69,7 +78,8 @@
         :local-player-id="currentPlayerId"
         :cell-class="getCellClass"
         @submit-turn="submitTurn"
-        @clear-letters="game.clearTempLetters"
+        @skip-turn="skipTurn"
+        @clear-letters="handleClearLetters"
         @draw-tile="drawTileForCurrentPlayer"
         @select-tile="selectTile"
         @cell-click="handleCellClick"
@@ -99,11 +109,12 @@ const isValidating = ref(false);
 const joinCode = ref('');
 const showExitConfirm = ref(false);
 const showResetConfirm = ref(false);
+const showSkipConfirm = ref(false);
 
 const game = useScrabble();
 const validation = useWordValidation();
 const socket = useSocket();
-const currentPlayerId = ref('player-' + Date.now());
+const currentPlayerId = ref('player_' + Date.now() + Math.floor(Math.random() * 1000000).toString());
 const hostId = ref<string | null>(null);
 
 // Computed property to check if current player is host
@@ -126,40 +137,61 @@ onMounted(async () => {
   }
 });
 
+const handleKeyPress = (e: KeyboardEvent) => {
+  if (gameState.value !== 'playing' || !game.selectedCell.value) return;
+
+  const key = e.key.toUpperCase();
+
+  // State is broadcasted on letter addition or removal
+  if (key === 'ARROWUP' || key === 'ARROWDOWN' || key === 'ARROWLEFT' || key === 'ARROWRIGHT') {
+    e.preventDefault();
+    moveSelection(key);
+  } else if (key === 'BACKSPACE') {
+    e.preventDefault();
+    game.removeLetterAtPosition(game.selectedCell.value);
+    broadcastGameState();
+  } else if (key.length === 1 && key.match(/[A-Z]/)) {
+    e.preventDefault();
+    game.placeLetterFromKeyboard(key, game.selectedCell.value);
+    broadcastGameState();
+  }
+};
+
 // Keyboard controls
 onMounted(() => {
-  const handleKeyPress = (e: KeyboardEvent) => {
-    if (gameState.value !== 'playing' || !game.selectedCell.value) return;
-
-    const key = e.key.toUpperCase();
-
-    if (key === 'ARROWUP' || key === 'ARROWDOWN' || key === 'ARROWLEFT' || key === 'ARROWRIGHT') {
-      e.preventDefault();
-      moveSelection(key);
-    } else if (key === 'BACKSPACE') {
-      e.preventDefault();
-      game.removeLetterAtPosition(game.selectedCell.value);
-    } else if (key.length === 1 && key.match(/[A-Z]/)) {
-      e.preventDefault();
-      game.placeLetterFromKeyboard(key, game.selectedCell.value);
-    }
-  };
-
   window.addEventListener('keydown', handleKeyPress);
+})
 
-  onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeyPress);
-  });
+// Reset header state when leaving the component
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress);
+  hideHeader.value = false;
 });
+
+// Helper to broadcast state instantly
+const broadcastGameState = () => {
+  if (isOnlineMode.value && roomCode.value) {
+    socket.updateGameState(roomCode.value, {
+      status: 'playing',
+      board: game.board.value,
+      players: game.players.value,
+      currentPlayerIndex: game.currentPlayerIndex.value,
+      currentRound: game.currentRound.value,
+      letterBag: game.letterBag.value,
+      usedWords: game.usedWords.value
+    });
+  }
+};
+
+// Handle explicit clears
+const handleClearLetters = () => {
+  game.clearTempLetters();
+  broadcastGameState();
+};
 
 // Watch game state to hide header when playing
 watch(gameState, (newState) => {
   hideHeader.value = newState === 'playing';
-});
-
-// Reset header state when leaving the component
-onUnmounted(() => {
-  hideHeader.value = false;
 });
 
 const moveSelection = (direction: string) => {
@@ -179,8 +211,6 @@ const moveSelection = (direction: string) => {
 };
 
 const currentPlayer = computed(() => game.players.value[game.currentPlayerIndex.value] as ScrabblePlayer | undefined);
-
-const flatBoard = computed(() => game.board.value.flat());
 
 const getCellClass = (cell: any, row: number, col: number) => {
   const classes = [
@@ -337,17 +367,7 @@ const startGame = () => {
   gameState.value = 'playing';
 
   // Issue the layout and player info to non-hosts
-  if (isOnlineMode.value && roomCode.value) {
-    socket.updateGameState(roomCode.value, {
-      status: 'playing',
-      board: game.board.value,
-      players: game.players.value,
-      currentPlayerIndex: game.currentPlayerIndex.value,
-      currentRound: game.currentRound.value,
-      letterBag: game.letterBag.value,
-      usedWords: game.usedWords.value
-    });
-  }
+  broadcastGameState();
 };
 
 // Monitor the server explicitly for updates (sync state mapping)
@@ -356,10 +376,40 @@ watch(() => socket.gameState.value, (newState) => {
     if (newState.status === 'playing') {
       if (gameState.value !== 'playing') {
         gameState.value = 'playing'; // Change screens for non-hosts
+        // Force initialize non-host players array properly
+        if (game.players.value.length <= 1) {
+          game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [], score: 0 })) as ScrabblePlayer[];
+        }
       }
-      // Prevent undefined properties from destroying local refs
+
+      // Sync incoming items
       if (newState.board) game.board.value = newState.board as ScrabbleGameState['board'];
-      if (newState.players) game.players.value = newState.players as ScrabbleGameState['players'];
+      
+      if (newState.players && Array.isArray(newState.players)) {
+        // Carefully sync to preserve Vue deep reactivity and nested tile arrays
+        if (game.players.value.length === 0) {
+          game.players.value = newState.players as ScrabbleGameState['players'];
+        } else {
+          newState.players.forEach((incPlayer: any, i: number) => {
+            if (game.players.value[i]) {
+              game.players.value[i].score = incPlayer.score || 0;
+              game.players.value[i].id = incPlayer.id;
+              if (incPlayer.name) game.players.value[i].name = incPlayer.name;
+              if (incPlayer.tiles) game.players.value[i].tiles = incPlayer.tiles;
+            }
+          });
+        }
+      }
+
+      // Ensure player names stay mapped (in case backend GameState scrubs non-schema parts)
+      if (socket.roomPlayers.value?.length > 0) {
+        game.players.value.forEach(p => {
+          const lobbyMatch = socket.roomPlayers.value.find(rp => rp.id === p.id);
+          if (lobbyMatch) p.name = lobbyMatch.name;
+        });
+      }
+
+      // Prevent undefined properties from destroying local refs
       if (newState.currentPlayerIndex !== undefined) game.currentPlayerIndex.value = newState.currentPlayerIndex as ScrabbleGameState['currentPlayerIndex'];
       if (newState.currentRound !== undefined) game.currentRound.value = newState.currentRound as ScrabbleGameState['currentRound'];
       if (newState.letterBag) game.letterBag.value = newState.letterBag as ScrabbleGameState['letterBag'];
@@ -402,12 +452,16 @@ const confirmExit = () => {
 };
 
 const handleCellClick = (row: number, col: number) => {
+  // Prevent placing if it's not the user's turn
+  if (isOnlineMode.value && game.players.value[game.currentPlayerIndex.value]?.id !== currentPlayerId.value) return;
+
   console.log(`[SCRABBLE] Cell clicked: [${row}, ${col}]`);
   game.selectedCell.value = { row, col };
 
   // If a tile is selected, place it
   if (game.selectedTileIndex.value !== null) {
     game.placeTile(game.selectedTileIndex.value, { row, col });
+    broadcastGameState();
   }
 };
 
@@ -419,6 +473,13 @@ const selectTile = (index: number) => {
 const drawTileForCurrentPlayer = () => {
   const player = currentPlayer.value;
   if (!player) return;
+
+  // Enforce server-side matching turn
+  if (isOnlineMode.value && player.id !== currentPlayerId.value) {
+    statusMessage.value = "It's not your turn!";
+    setTimeout(() => statusMessage.value = '', 2000);
+    return;
+  }
 
   if (game.tempPositions.value.length > 0) {
     statusMessage.value = 'Submit your turn before drawing more tiles!';
@@ -433,7 +494,8 @@ const drawTileForCurrentPlayer = () => {
   }
 
   game.drawTilesForPlayer(game.currentPlayerIndex.value, 1);
-  statusMessage.value = 'Drew a tile!';
+  statusMessage.value = `Player ${player?.name || game?.currentPlayerIndex || ''} drew a tile!`;
+  broadcastGameState();
   setTimeout(() => statusMessage.value = '', 2000);
 };
 
@@ -508,6 +570,8 @@ const submitTurn = async () => {
       game.currentRound.value++;
     }
 
+    broadcastGameState();
+
     if (isOnlineMode.value && roomCode.value) {
       socket.updateGameState(roomCode.value, {
         status: 'playing',
@@ -553,5 +617,30 @@ const confirmResetGame = () => {
     p.tiles = [];
   });
   showResetConfirm.value = false;
+};
+
+const skipTurn = () => {
+  // Enforce server-side matching turn
+  if (isOnlineMode.value && game.players.value[game.currentPlayerIndex.value]?.id !== currentPlayerId.value) {
+    statusMessage.value = "It's not your turn!";
+    setTimeout(() => statusMessage.value = '', 2000);
+    return;
+  }
+
+  if (gameState.value !== 'playing') {
+    showSkipConfirm.value = true;
+  }
+};
+
+const confirmSkipTurn = () => {
+  console.log('[SCRABBLE] Skipping turn');
+  game.currentPlayerIndex.value = (game.currentPlayerIndex.value + 1) % game.players.value.length;
+
+  if (game.currentPlayerIndex.value === 0) {
+    game.currentRound.value++;
+  }
+
+  broadcastGameState();
+  showSkipConfirm.value = false;
 };
 </script>
