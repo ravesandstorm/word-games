@@ -18,7 +18,7 @@ export default defineNitroPlugin(async () => {
 
   console.log('[MONGODB] Attempting to connect...')
   try {
-    await mongoose.connect(config.mongoUri, { serverSelectionTimeoutMS: 2000 }) // added timeout
+    await mongoose.connect(config.mongoUri, { serverSelectionTimeoutMS: 5000 }) // added timeout
     isConnected = true
     console.log('[MONGODB] ✓ Connected successfully')
   } catch (err) {

@@ -15,7 +15,7 @@ export function useSocket() {
 
     const config = useRuntimeConfig();
     // Use window.location.origin in browser to get the current host
-    const socketUrl = process.client 
+    const socketUrl = import.meta.client
       ? window.location.origin 
       : (config.public.apiBase || 'http://localhost:3000');
     
@@ -112,6 +112,11 @@ export function useSocket() {
     socket.value.emit('update-game-state', { roomCode, gameState: newGameState });
   };
 
+  const updatePlayer = (roomCode: string, playerId: string, name: string) => {
+    if (!socket.value?.connected) return;
+    socket.value.emit('update-player', { roomCode, playerId, name });
+  };
+
   onUnmounted(() => {
     disconnect();
   });
@@ -125,6 +130,7 @@ export function useSocket() {
     disconnect,
     joinRoom,
     leaveRoom,
-    updateGameState
+    updateGameState,
+    updatePlayer
   };
 }

@@ -31,6 +31,8 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         io.bind(engine);
         console.log("[SOCKET.IO] ✓ Socket.IO bound to Engine.IO");
 
+        const socketMap = new Map<string, { roomCode: string, playerId: string }>();
+
         // CRITICAL: Handle both /socket.io/ routes
         nitroApp.router.use(
             "/socket.io/",
@@ -142,6 +144,8 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
                             console.log(`[SOCKET.IO] ✓ Player added: ${playerName}`);
                         }
 
+                        socketMap.set(socket.id, { roomCode: roomCode.toUpperCase(), playerId });
+
                         socket.join(roomCode);
                         console.log(`[SOCKET.IO] ✓ Socket joined room: ${roomCode}`);
 
@@ -186,6 +190,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
                             );
                             await room.save();
                             socket.leave(roomCode);
+                            socketMap.delete(socket.id);
 
                             io.to(roomCode).emit("room-updated", {
                                 players: room.players,
@@ -204,7 +209,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
             socket.on(
                 "update-game-state",
-                async (data: { roomCode: string; gameState: any }) => {
+                async (data: { roomCode: string; gameState: Partial<GameState> }) => {
                     try {
                         const { roomCode, gameState } = data;
 
@@ -237,8 +242,40 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
                 }
             );
 
-            socket.on("disconnect", () => {
+            socket.on("update-player", async (data: { roomCode: string; playerId: string; name: string }) => {
+                try {
+                    const room = await Room.findOne({ roomCode: data.roomCode.toUpperCase() });
+                    if (room) {
+                        const p = room.players.find((pl: Player) => pl.id === data.playerId);
+                        if (p) p.name = data.name;
+                        await room.save();
+                        io.to(data.roomCode).emit("room-updated", {
+                            players: room.players,
+                            gameState: room.gameState,
+                        });
+                    }
+                } catch (err) {
+                    console.error("[SOCKET.IO] ✗ update-player error:", err);
+                }
+            });
+
+            socket.on("disconnect", async () => {
                 console.log(`[SOCKET.IO] ✗ Client disconnected: ${socket.id}`);
+                const data = socketMap.get(socket.id);
+                if (data) {
+                    try {
+                        const room = await Room.findOne({ roomCode: data.roomCode.toUpperCase() });
+                        if (room) {
+                            room.players = room.players.filter((p: Player) => p.id !== data.playerId);
+                            await room.save();
+                            io.to(data.roomCode).emit("room-updated", {
+                                players: room.players,
+                                gameState: room.gameState,
+                            });
+                        }
+                    } catch (e) { }
+                    socketMap.delete(socket.id);
+                }
             });
 
             socket.on("error", (error) => {
