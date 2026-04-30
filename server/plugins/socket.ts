@@ -3,7 +3,7 @@ import { Server as Engine } from "engine.io";
 import { Server as SocketIOServer } from "socket.io";
 import { defineEventHandler } from "h3";
 import { Room } from "../models/Room";
-import type { Player } from "../../types/game";
+import type { Player, GameState } from "../../types/game";
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
     try {
@@ -209,9 +209,9 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
             socket.on(
                 "update-game-state",
-                async (data: { roomCode: string; gameState: Partial<GameState> }) => {
+                async (data: { roomCode: string; gameState: Partial<GameState>, players?: any[] }) => {
                     try {
-                        const { roomCode, gameState } = data;
+                        const { roomCode, gameState, players: incomingPlayers } = data;
 
                         if (!roomCode || !gameState) {
                             console.error(
@@ -228,10 +228,24 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
                         if (room) {
                             room.gameState = { ...room.gameState, ...gameState };
+
+                            // If players are included, update them as well
+                            // Only save player names/scores to DB, NOT tiles
+                            if (incomingPlayers && Array.isArray(incomingPlayers)) {
+                                room.players = incomingPlayers.map((p: any) => ({
+                                    id: p.id,
+                                    name: p.name,
+                                    score: p.score,
+                                    isLocal: p.isLocal || false,
+                                    // Don't save tiles to DB, they are client-side
+                                }));
+                            }
+
                             await room.save();
 
                             io.to(roomCode).emit("game-state-updated", {
                                 gameState: room.gameState,
+                                players: incomingPlayers,
                             });
 
                             console.log(`[SOCKET.IO] ✓ Game state updated: ${roomCode}`);
