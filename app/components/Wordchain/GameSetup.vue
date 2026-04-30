@@ -80,7 +80,7 @@
 
       <!-- Your Name Section -->
       <div class="mb-6">
-        <label class="text-white font-semibold mb-2 block">Your Name</label>
+        <label class="text-white font-semibold mb-2 block">Set Name:</label>
         <input
           :value="localPlayerName"
           @change="$emit('update-local-name', ($event.target as HTMLInputElement).value)"
@@ -140,7 +140,7 @@
         <!-- Local Players -->
         <div>
           <div class="flex justify-between items-center mb-2">
-            <label v-if="players.length > 1" class="text-white font-semibold">Players (Max 4)</label>
+            <label class="text-white font-semibold">Current Players:</label>
             <button
               @click="$emit('add-player')"
               :disabled="!isHost"
