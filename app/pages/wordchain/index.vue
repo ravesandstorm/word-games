@@ -117,8 +117,16 @@ const roundsPerIncrement = ref(6);
 const game = useGame();
 const validation = useWordValidation();
 const socket = useSocket();
-const currentPlayerId = ref('player-' + Date.now() + Math.floor(Math.random() * 1000000).toString());
+const currentPlayerId = ref('');
 const hostId = ref<string | null>(null);
+
+// Generate ID safely on client-side to prevent Nuxt SSR hydration mismatches
+onMounted(() => {
+  if (!currentPlayerId.value) {
+    currentPlayerId.value = 'player_' + Date.now() + Math.random().toString(36).substring(2, 9);
+    console.log(`[DEBUG] Generated player ID: ${currentPlayerId.value}`);
+  }
+});
 
 // Computed property to check if current player is host
 const isHost = computed(() => {
@@ -189,14 +197,21 @@ onUnmounted(() => {
 // Helper to broadcast state instantly
 const broadcastGameState = () => {
   if (isOnlineMode.value && roomCode.value) {
-    socket.updateGameState(roomCode.value, {
+    const newGameState = {
       status: 'playing',
       board: game.board.value,
-      players: game.players.value,
       currentPlayerIndex: game.currentPlayerIndex.value,
       currentRound: game.currentRound.value,
       usedWords: game.usedWords.value
+    } as Partial<GameState>;
+
+      const players = game.players.value.map(p => {
+        const { id, name, score, isLocal } = p;
+        // Empty tiles for type safety, wordchain does not use tiles
+        return { id, name, score, isLocal, tiles: [] }; 
     });
+
+    socket.updateGameState(roomCode.value, newGameState, players)
   }
 };
 
@@ -332,7 +347,10 @@ const startGame = (settings: any) => {
 
   // Load online players into game instance properly
   if (isOnlineMode.value && socket.roomPlayers.value.length > 0) {
-    game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [] })) as Player[];
+    game.players.value = socket.roomPlayers.value.map(p => ({ 
+      ...p, 
+      score: 0 
+    })) as Player[];
   }
   
   game.initializeBoard(settings.boardSize);
@@ -359,22 +377,32 @@ watch(() => socket.gameState.value, (newState) => {
         gameState.value = 'playing'; // Change screens for non-hosts
         // Force initialize non-host players array properly
         if (game.players.value.length <= 1) {
-          game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [], score: 0 })) as Player[];
+          game.players.value = socket.roomPlayers.value.map(p => ({ 
+            ...p,
+            score: 0
+          })) as Player[];
         }
       }
 
-      // Ensure player names stay mapped (in case backend GameState scrubs non-schema parts)
+      if (newState.board) game.board.value = newState.board as GameState['board'];
+
+      // Trust the server state completely. Avoid complex conditional merging
       if (socket.roomPlayers.value?.length > 0) {
-        game.players.value.forEach(p => {
-          const lobbyMatch = socket.roomPlayers.value.find(rp => rp.id === p.id);
-          if (lobbyMatch) p.name = lobbyMatch.name;
+        game.players.value = socket.roomPlayers.value.map(inc => {
+          const existing = game.players.value.find(p => p.id === inc.id);
+          return {
+            ...existing,
+            ...inc,
+            score: inc.score ?? existing?.score ?? 0
+          } as Player;
         });
+        console.log('[DEBUG] ✓ Synced players from server:', game.players.value);
       }
 
-      if (newState.board) game.board.value = newState.board as GameState['board'];
-      if (newState.players) game.players.value = newState.players as GameState['players'];
-      if (newState.currentPlayerIndex) game.currentPlayerIndex.value = newState.currentPlayerIndex as GameState['currentPlayerIndex'];
-      if (newState.currentRound) game.currentRound.value = newState.currentRound as GameState['currentRound'];
+      // Prevent undefined properties from destroying local refs
+      // Undefined check for numeric values to allow zero scores and rounds
+      if (newState.currentPlayerIndex !== undefined) game.currentPlayerIndex.value = newState.currentPlayerIndex as GameState['currentPlayerIndex'];
+      if (newState.currentRound !== undefined) game.currentRound.value = newState.currentRound as GameState['currentRound'];
       if (newState.usedWords) game.usedWords.value = newState.usedWords as GameState['usedWords'];
     }
   }
@@ -589,16 +617,7 @@ const confirmResetGame = () => {
 };
 
 const skipTurn = () => {
-  // Enforce server-side matching turn
-  if (isOnlineMode.value && game.players.value[game.currentPlayerIndex.value]?.id !== currentPlayerId.value) {
-    statusMessage.value = "It's not your turn!";
-    setTimeout(() => statusMessage.value = '', 2000);
-    return;
-  }
-
-  if (gameState.value === 'playing') {
-    showSkipConfirm.value = true;
-  }
+  showSkipConfirm.value = true;
 };
 
 const confirmSkipTurn = () => {
