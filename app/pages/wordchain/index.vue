@@ -356,17 +356,7 @@ const startGame = (settings: any) => {
   game.initializeBoard(settings.boardSize);
   gameState.value = 'playing';
 
-  // Issue the layout and player info to non-hosts
-  if (isOnlineMode.value && roomCode.value) {
-    socket.updateGameState(roomCode.value, {
-      status: 'playing',
-      board: game.board.value,
-      players: game.players.value,
-      currentPlayerIndex: game.currentPlayerIndex.value,
-      currentRound: game.currentRound.value,
-      usedWords: game.usedWords.value
-    });
-  }
+  broadcastGameState();
 };
 
 // Monitor the server explicitly for updates (sync state mapping)
@@ -573,16 +563,7 @@ const submitTurn = async () => {
       console.log(`[SUBMIT] Round ${game.currentRound.value} starting`);
     }
 
-    if (isOnlineMode.value && roomCode.value) {
-      socket.updateGameState(roomCode.value, {
-        status: 'playing',
-        board: game.board.value,
-        players: game.players.value,
-        currentPlayerIndex: game.currentPlayerIndex.value,
-        currentRound: game.currentRound.value,
-        usedWords: game.usedWords.value
-      });
-    }
+    broadcastGameState();
 
     console.log('[SUBMIT] ========== TURN COMPLETE ==========');
 
