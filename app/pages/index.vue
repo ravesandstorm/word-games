@@ -28,7 +28,7 @@
           >
             <!-- Game Image/Icon -->
             <div
-                class="h-48 bg-gradient-to-br overflow-hidden relative rounded-2xl"
+                class="h-36 bg-gradient-to-br overflow-hidden relative rounded-lg"
                 :class="game.gradient">
               <div class="absolute inset-0 flex items-center justify-center">
                 <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
@@ -59,11 +59,11 @@
             </div>
 
             <!-- Game Info -->
-            <div class="p-6">
-              <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors">
+            <div class="p-4">
+              <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-300 transition-colors text-center">
                 {{ game.name }}
               </h3>
-              <p class="text-gray-300 text-sm mb-4">{{ game.tagline }}</p>
+              <p class="text-gray-300 text-sm mb-4 text-center">{{ game.tagline }}</p>
 
               <div class="flex items-center justify-between w-full gap-4">
                 <div class="flex flex-col items-center">
@@ -88,12 +88,14 @@
 
         <!-- Footer Info -->
         <div class="mt-16 text-center relative z-10">
-          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-2xl mx-auto">
+          <div class="bg-white/10 backdrop-blur-lg rounded-lg p-8 max-w-2xl mx-auto">
             <h2 class="text-2xl font-bold text-white mb-4">About Word Games</h2>
             <p class="text-gray-300 leading-relaxed mb-4">
-              Welcome to our collection of word games! Challenge yourself with classic games like Wordle,
-              test your vocabulary with Word Chain, or compete with friends in Scrabble. Each game offers
-              unique challenges and endless fun.
+              Welcome to our collection of word games! Challenge yourself to get high scores 
+              with a version of the classic game Wordle, compete with friends in Scrabble, 
+              or test your vocabulary with a custom version of Scrabble called Word Chain, 
+              where the only limitation is the number of letters. Each game offers unique 
+              challenges that are sure to engage and entertain players. Have fun!
             </p>
             <div class="flex justify-center gap-4 text-sm text-gray-400">
               <span>🎮 3 Games</span>
