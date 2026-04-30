@@ -20,6 +20,11 @@ const roomSchema = new mongoose.Schema({
     status: String,
     usedWords: [String]
   },
+  letterBag: [{
+    letter: String,
+    score: Number,
+    isBlank: Boolean
+  }],
   createdAt: { type: Date, default: Date.now, expires: 7200 }
 });
 
