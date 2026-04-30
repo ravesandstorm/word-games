@@ -1,10 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 import type { Player, GameState } from '../../types/game';
+import type { ScrabblePlayer, ScrabbleTile } from '../../types/scrabble';
 
 export function useSocket() {
   const socket = ref<Socket | null>(null);
   const isConnected = ref(false);
   const roomPlayers = ref<Player[]>([]);
+  const scrabblePlayers = ref<ScrabblePlayer[]>([]);
+  const letterBag = ref<ScrabbleTile[]>([]);
   const gameState = ref<GameState | null>(null);
 
   const connect = () => {
@@ -58,13 +61,27 @@ export function useSocket() {
       gameState.value = data.gameState;
     });
 
-    socket.value.on('game-state-updated', (data: { gameState: GameState; players?: Player[] }) => {
+    socket.value.on('game-state-updated', (data: { 
+      gameState: GameState;
+      players?: ScrabblePlayer[];
+      letterBag?: ScrabbleTile[];
+    }) => {
       console.log('[SOCKET] ✓ Game state updated:', data);
       gameState.value = data.gameState;
 
       if (data.players) {
-        roomPlayers.value = data.players;
+        const playerWithoutTiles = data.players?.map(p => {
+          const { tiles, ...rest } = p;
+          return rest;
+        });
+        roomPlayers.value = playerWithoutTiles as Player[]; // Cast to Player[]
+        scrabblePlayers.value = data.players as ScrabblePlayer[]; // Cast to ScrabblePlayer[]
         console.log('[SOCKET] ✓ Players updated with game state:', data.players);
+      }
+
+      if (data.letterBag !== undefined) {
+        letterBag.value = data.letterBag; // Save full letter bag data to state for UI updates
+        console.log('[SOCKET] ✓ LetterBag synced:', data.letterBag.length, 'tiles');
       }
     });
 
@@ -108,7 +125,12 @@ export function useSocket() {
     socket.value.emit('leave-room', { roomCode, playerId });
   };
 
-  const updateGameState = (roomCode: string, newGameState: Partial<GameState>) => {
+  const updateGameState = (
+    roomCode: string,
+    newGameState: Partial<GameState>,
+    players?: ScrabblePlayer[],
+    letterBag?: ScrabbleTile[]
+  ) => {
     if (!socket.value?.connected) {
       console.error('[SOCKET] ✗ Cannot update: Not connected');
       return;
@@ -117,13 +139,11 @@ export function useSocket() {
     console.log(`[SOCKET] >>> Emitting update-game-state: ${roomCode}`);
     console.log('[SOCKET] Payload includes players:', newGameState.players);
 
-    // Extract players from the gameState object
-    const { players, ...gameStateWithoutPlayers } = newGameState as any;
-
     socket.value.emit('update-game-state', {
       roomCode,
-      gameState: gameStateWithoutPlayers,
-      players: players // Send players at the top level
+      gameState: newGameState,
+      players,
+      letterBag
     });
   };
 
@@ -141,6 +161,8 @@ export function useSocket() {
     isConnected,
     roomPlayers,
     gameState,
+    scrabblePlayers,
+    letterBag,
     connect,
     disconnect,
     joinRoom,

@@ -4,6 +4,7 @@ import { Server as SocketIOServer } from "socket.io";
 import { defineEventHandler } from "h3";
 import { Room } from "../models/Room";
 import type { Player, GameState } from "../../types/game";
+import type { ScrabbleTile, ScrabblePlayer } from "../../types/scrabble";
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
     try {
@@ -209,9 +210,14 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
             socket.on(
                 "update-game-state",
-                async (data: { roomCode: string; gameState: Partial<GameState>, players?: any[] }) => {
+                async (data: {
+                    roomCode: string,
+                    gameState: Partial<GameState>,
+                    players?: ScrabblePlayer[],
+                    letterBag?: ScrabbleTile[],
+                }) => {
                     try {
-                        const { roomCode, gameState, players: incomingPlayers } = data;
+                        const { roomCode, gameState, players, letterBag } = data;
 
                         if (!roomCode || !gameState) {
                             console.error(
@@ -222,33 +228,27 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
 
                         console.log(`[SOCKET.IO] UPDATE-GAME-STATE: ${roomCode}`);
 
-                        const room = await Room.findOne({
-                            roomCode: roomCode.toUpperCase(),
+                        const playerWithoutTiles = players?.map(p => {
+                            const { tiles, ...rest } = p;
+                            return rest;
                         });
 
+                        const room = await Room.findOneAndUpdate(
+                            { roomCode: roomCode.toUpperCase() },
+                            { gameState, playerWithoutTiles, letterBag },
+                            { new: true, runValidators: true } // new: true returns updated doc
+                        );
+
                         if (room) {
-                            room.gameState = { ...room.gameState, ...gameState };
-
-                            // If players are included, update them as well
-                            // Only save player names/scores to DB, NOT tiles
-                            if (incomingPlayers && Array.isArray(incomingPlayers)) {
-                                room.players = incomingPlayers.map((p: any) => ({
-                                    id: p.id,
-                                    name: p.name,
-                                    score: p.score,
-                                    isLocal: p.isLocal || false,
-                                    // Don't save tiles to DB, they are client-side
-                                }));
-                            }
-
-                            await room.save();
-
                             io.to(roomCode).emit("game-state-updated", {
                                 gameState: room.gameState,
-                                players: incomingPlayers,
+                                players, // Send full player data to clients for UI updates, but only save non-tile data to DB
+                                letterBag: letterBag,
                             });
 
                             console.log(`[SOCKET.IO] ✓ Game state updated: ${roomCode}`);
+                        } else {
+                            console.error(`[SOCKET.IO] ✗ Room not found: ${roomCode}`);
                         }
                     } catch (err) {
                         console.error("[SOCKET.IO] ✗ update-game-state error:", err);
