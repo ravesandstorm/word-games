@@ -16,13 +16,22 @@ export default defineNuxtConfig({
       websocket: true,
     },
   },
-  ssr: false, // For decoupled frontend and backend, we can disable SSR
+  // For decoupled frontend and backend, we can disable SSR
+  ssr: true,
   app: {
     head: {
       title: "Word Games - Play and Learn",
       meta: [
         { charset: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
+      ],
+    },
+  },
+  vite: {
+    optimizeDeps: {
+      include: [
+        'three',
+        'postprocessing',
       ],
     },
   },
