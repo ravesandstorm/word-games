@@ -91,7 +91,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ScrabbleGameState, ScrabblePlayer } from '../../../types/scrabble';
+import type { ScrabbleGameState, ScrabblePlayer, ScrabbleTile } from '../../../types/scrabble';
+import type { GameState } from '../../../types/game';
 import type { WordValidationResponse } from '../../../types/game';
 import type { DefaultServerStatus } from '../../../types/index';
 
@@ -114,8 +115,16 @@ const showSkipConfirm = ref(false);
 const game = useScrabble();
 const validation = useWordValidation();
 const socket = useSocket();
-const currentPlayerId = ref('player_' + Date.now() + Math.floor(Math.random() * 1000000).toString());
+const currentPlayerId = ref('');
 const hostId = ref<string | null>(null);
+
+// Generate ID safely on client-side to prevent Nuxt SSR hydration mismatches
+onMounted(() => {
+  if (!currentPlayerId.value) {
+    currentPlayerId.value = 'player_' + Date.now() + Math.random().toString(36).substring(2, 9);
+    console.log(`[DEBUG] Generated player ID: ${currentPlayerId.value}`);
+  }
+});
 
 // Computed property to check if current player is host
 const isHost = computed(() => {
@@ -171,15 +180,24 @@ onUnmounted(() => {
 // Helper to broadcast state instantly
 const broadcastGameState = () => {
   if (isOnlineMode.value && roomCode.value) {
-    socket.updateGameState(roomCode.value, {
+    const newGameState = {
       status: 'playing',
       board: game.board.value,
-      players: game.players.value,
       currentPlayerIndex: game.currentPlayerIndex.value,
       currentRound: game.currentRound.value,
-      letterBag: game.letterBag.value,
       usedWords: game.usedWords.value
-    });
+    } as Partial<GameState>;
+
+    const players = game.players.value.map(p => ({
+      id: p.id,
+      name: p.name,
+      score: p.score,
+      isLocal: p.isLocal,
+      tiles: p.tiles // Sending tiles for all players, server can choose to ignore non-current player's tiles if desired
+    })) as ScrabblePlayer[];
+    const hostLetterBag = (isHost && game.letterBag.value) ? game.letterBag.value as ScrabbleTile[] : undefined;
+
+    socket.updateGameState(roomCode.value, newGameState, players, hostLetterBag);
   }
 };
 
@@ -252,6 +270,8 @@ const startOnlineSetup = () => {
   }
   isOnlineMode.value = true;
   gameState.value = 'setup';
+
+  // Connect to WebSocket
   socket.connect();
 };
 
@@ -354,9 +374,14 @@ const startGame = () => {
   game.initializeBoard();
   game.initializeLetterBag();
 
-  // Load online players into game instance properly
+  // Load online players into game instance properly, 
+  // roomPlayers is for player initialization, then we trust scrabblePlayers for reliable tile data
   if (isOnlineMode.value && socket.roomPlayers.value.length > 0) {
-    game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [] })) as ScrabblePlayer[];
+    game.players.value = socket.roomPlayers.value.map(p => ({
+      ...p,
+      score: 0,
+      tiles: []
+    })) as ScrabblePlayer[];
   }
 
   // Draw 7 tiles for each player
@@ -376,43 +401,42 @@ watch(() => socket.gameState.value, (newState) => {
     if (newState.status === 'playing') {
       if (gameState.value !== 'playing') {
         gameState.value = 'playing'; // Change screens for non-hosts
-        // Force initialize non-host players array properly
+        // Force initialize non-host players array properly (Removing this causes player array to be empty!)
         if (game.players.value.length <= 1) {
-          game.players.value = socket.roomPlayers.value.map(p => ({ ...p, tiles: [], score: 0 })) as ScrabblePlayer[];
+          // Don't initialize empty tiles here, server sets it
+          game.players.value = socket.scrabblePlayers.value.map(p => ({ 
+            ...p,
+          })) as ScrabblePlayer[];
         }
       }
 
       // Sync incoming items
       if (newState.board) game.board.value = newState.board as ScrabbleGameState['board'];
-      
-      if (newState.players && Array.isArray(newState.players)) {
-        // Carefully sync to preserve Vue deep reactivity and nested tile arrays
-        if (game.players.value.length === 0) {
-          game.players.value = newState.players as ScrabbleGameState['players'];
-        } else {
-          newState.players.forEach((incPlayer: any, i: number) => {
-            if (game.players.value[i]) {
-              game.players.value[i].score = incPlayer.score || 0;
-              game.players.value[i].id = incPlayer.id;
-              if (incPlayer.name) game.players.value[i].name = incPlayer.name;
-              if (incPlayer.tiles) game.players.value[i].tiles = incPlayer.tiles;
-            }
-          });
-        }
+
+      // Trust the server state completely. Avoid complex conditional merging
+      if (socket.scrabblePlayers.value?.length > 0) {
+        game.players.value = socket.scrabblePlayers.value.map(inc => {
+          const existing = game.players.value.find(p => p.id === inc.id);
+          return {
+            ...existing,
+            ...inc,
+            score: inc.score ?? existing?.score ?? 0,
+            tiles: (inc.tiles && inc.tiles.length > 0) ? inc.tiles : (existing?.tiles || [])
+          } as ScrabblePlayer;
+        });
+        console.log('[DEBUG] ✓ Synced players from server:', game.players.value);
       }
 
-      // Ensure player names stay mapped (in case backend GameState scrubs non-schema parts)
-      if (socket.roomPlayers.value?.length > 0) {
-        game.players.value.forEach(p => {
-          const lobbyMatch = socket.roomPlayers.value.find(rp => rp.id === p.id);
-          if (lobbyMatch) p.name = lobbyMatch.name;
-        });
+      // Only update letter bag if server provides it (prevents overwriting host's bag with empty bag on join)
+      if (socket.letterBag.value) {
+        game.letterBag.value = socket.letterBag.value as ScrabbleGameState['letterBag'];
+        console.log('[DEBUG] ✓ Synced letter bag from server:', game.letterBag.value.length, 'tiles');
       }
 
       // Prevent undefined properties from destroying local refs
+      // Undefined check for numeric values to allow zero scores and rounds
       if (newState.currentPlayerIndex !== undefined) game.currentPlayerIndex.value = newState.currentPlayerIndex as ScrabbleGameState['currentPlayerIndex'];
       if (newState.currentRound !== undefined) game.currentRound.value = newState.currentRound as ScrabbleGameState['currentRound'];
-      if (newState.letterBag) game.letterBag.value = newState.letterBag as ScrabbleGameState['letterBag'];
       if (newState.usedWords) game.usedWords.value = newState.usedWords as ScrabbleGameState['usedWords'];
     }
   }
@@ -620,16 +644,7 @@ const confirmResetGame = () => {
 };
 
 const skipTurn = () => {
-  // Enforce server-side matching turn
-  if (isOnlineMode.value && game.players.value[game.currentPlayerIndex.value]?.id !== currentPlayerId.value) {
-    statusMessage.value = "It's not your turn!";
-    setTimeout(() => statusMessage.value = '', 2000);
-    return;
-  }
-
-  if (gameState.value !== 'playing') {
-    showSkipConfirm.value = true;
-  }
+  showSkipConfirm.value = true;
 };
 
 const confirmSkipTurn = () => {
