@@ -25,9 +25,8 @@
             </button>
             <div>
               <h2 class="text-2xl font-bold text-white">Round {{ currentRound }}</h2>
-              <p class="text-yellow-300 font-semibold text-lg">
-                {{ currentPlayer?.name }}'s Turn
-              </p>
+              <p v-if="isMyTurn" class="text-yellow-300 font-semibold text-lg">Your Turn</p>
+              <p v-else class="text-yellow-300 font-semibold text-lg">{{ currentPlayer?.name }}'s Turn</p>
             </div>
           </div>
           <button
