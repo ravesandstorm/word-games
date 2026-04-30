@@ -25,8 +25,9 @@ export function useSocket() {
       path: '/socket.io/',  // CRITICAL: Must match backend path
       transports: ['polling', 'websocket'],  // Try polling first, then upgrade
       reconnection: true,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
       timeout: 10000
     });
 
@@ -57,9 +58,14 @@ export function useSocket() {
       gameState.value = data.gameState;
     });
 
-    socket.value.on('game-state-updated', (data: { gameState: GameState }) => {
+    socket.value.on('game-state-updated', (data: { gameState: GameState; players?: Player[] }) => {
       console.log('[SOCKET] ✓ Game state updated:', data);
       gameState.value = data.gameState;
+
+      if (data.players) {
+        roomPlayers.value = data.players;
+        console.log('[SOCKET] ✓ Players updated with game state:', data.players);
+      }
     });
 
     socket.value.on('error', (data: { message: string; details?: string }) => {
@@ -109,7 +115,16 @@ export function useSocket() {
     }
 
     console.log(`[SOCKET] >>> Emitting update-game-state: ${roomCode}`);
-    socket.value.emit('update-game-state', { roomCode, gameState: newGameState });
+    console.log('[SOCKET] Payload includes players:', newGameState.players);
+
+    // Extract players from the gameState object
+    const { players, ...gameStateWithoutPlayers } = newGameState as any;
+
+    socket.value.emit('update-game-state', {
+      roomCode,
+      gameState: gameStateWithoutPlayers,
+      players: players // Send players at the top level
+    });
   };
 
   const updatePlayer = (roomCode: string, playerId: string, name: string) => {

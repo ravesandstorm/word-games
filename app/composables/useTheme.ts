@@ -10,33 +10,30 @@ const currentGradientClass = ref<string>('bg-purple-500');
 
 export function useTheme() {
   const themes: Array<{ name: Theme; label: string; color: string }> = [
-    { name: 'purple', label: 'Purple', color: 'bg-purple-500' },
-    { name: 'blue', label: 'Blue', color: 'bg-blue-500' },
-    { name: 'green', label: 'Green', color: 'bg-green-500' },
     { name: 'orange', label: 'Orange', color: 'bg-orange-500' },
+    { name: 'purple', label: 'Purple', color: 'bg-purple-500' },
+    { name: 'green', label: 'Green', color: 'bg-green-500' },
+    { name: 'light', label: 'Light', color: 'bg-gray-500' },
+    { name: 'blue', label: 'Blue', color: 'bg-blue-500' },
     { name: 'pink', label: 'Pink', color: 'bg-pink-500' },
-    { name: 'light', label: 'Light', color: 'bg-gray-500' }
   ];
 
   const gradients: Record<Theme, string> = {
     purple: "from-purple-900/85 via-indigo-950/80 to-violet-950/85",
-    blue: "from-blue-950/85 via-cyan-900/80 to-sky-950/85",
-    green: "from-emerald-950/85 via-teal-900/80 to-green-950/85",
     orange: "from-amber-900/85 via-orange-950/80 to-rose-950/85",
+    green: "from-emerald-950/85 via-teal-900/80 to-green-950/85",
     pink: "from-pink-900/85 via-fuchsia-950/80 to-purple-950/85",
-    light: "from-gray-900/85 via-gray-800/80 to-gray-700/85"
+    light: "from-gray-900/85 via-gray-800/80 to-gray-700/85",
+    blue: "from-blue-950/85 via-cyan-900/80 to-sky-950/85",
   };
 
   const colors: Record<Theme, string> = {
-    purple:
-      "bg-purple-600 hover:bg-violet-700 active:bg-purple-800 ring-2 ring-purple-400/30 hover:ring-purple-300/40",
-    blue: "bg-blue-600 hover:bg-sky-700 active:bg-blue-800 ring-2 ring-blue-400/30 hover:ring-blue-300/40",
-    green:
-      "bg-emerald-600 hover:bg-teal-700 active:bg-emerald-800 ring-2 ring-emerald-400/30 hover:ring-emerald-300/40",
-    orange:
-      "bg-amber-600 hover:bg-orange-700 active:bg-amber-800 ring-2 ring-amber-400/30 hover:ring-amber-300/40",
+    green: "bg-emerald-600 hover:bg-teal-700 active:bg-emerald-800 ring-2 ring-emerald-400/30 hover:ring-emerald-300/40",
+    purple: "bg-purple-600 hover:bg-violet-700 active:bg-purple-800 ring-2 ring-purple-400/30 hover:ring-purple-300/40",
+    orange: "bg-amber-600 hover:bg-orange-700 active:bg-amber-800 ring-2 ring-amber-400/30 hover:ring-amber-300/40",
     pink: "bg-pink-600 hover:bg-fuchsia-700 active:bg-pink-800 ring-2 ring-pink-400/30 hover:ring-pink-300/40",
-    light: "bg-gray-600 hover:bg-gray-700 active:bg-gray-800 ring-2 ring-gray-400/30 hover:ring-gray-300/40"
+    light: "bg-gray-600 hover:bg-gray-700 active:bg-gray-800 ring-2 ring-gray-400/30 hover:ring-gray-300/40",
+    blue: "bg-blue-600 hover:bg-sky-700 active:bg-blue-800 ring-2 ring-blue-400/30 hover:ring-blue-300/40",
   };
 
   // Load theme from localStorage on mount
