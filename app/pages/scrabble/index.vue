@@ -596,18 +596,6 @@ const submitTurn = async () => {
 
     broadcastGameState();
 
-    if (isOnlineMode.value && roomCode.value) {
-      socket.updateGameState(roomCode.value, {
-        status: 'playing',
-        board: game.board.value,
-        players: game.players.value,
-        currentPlayerIndex: game.currentPlayerIndex.value,
-        currentRound: game.currentRound.value,
-        letterBag: game.letterBag.value,
-        usedWords: game.usedWords.value
-      });
-    }
-
     console.log('[SCRABBLE] ========== TURN COMPLETE ==========');
 
     setTimeout(() => statusMessage.value = '', 5000);
