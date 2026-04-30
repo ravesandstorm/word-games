@@ -1,12 +1,13 @@
-export type Theme = 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'light';
+export type Theme = 'orange' | 'purple' | 'green' | 'light' | 'blue' | 'pink';
 
 /**
  * Singleton variables, refresh across app
  * Since inside the exported function they are duplicated
  */
 
-const currentTheme = ref<Theme>('purple');
-const currentGradientClass = ref<string>('bg-purple-500');
+const currentTheme = ref<Theme>('orange');
+const currentGradientClass = ref<string>('from-amber-900/85 via-orange-950/80 to-rose-950/85');
+const currentAccentColor = ref<string>('bg-orange-500');
 
 export function useTheme() {
   const themes: Array<{ name: Theme; label: string; color: string }> = [
@@ -52,6 +53,7 @@ export function useTheme() {
   const setTheme = (theme: Theme) => {
     currentTheme.value = theme;
     setGradientClass(theme);
+    setAccentColor(theme);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('word-games-theme', theme);
@@ -65,7 +67,9 @@ export function useTheme() {
   }
 
   // Get accent color for theme
-  const getAccentColor = computed(() => colors[currentTheme.value]);
+  const setAccentColor = (theme: Theme) => {
+    currentAccentColor.value = colors[theme];
+  }
 
   // Get hyperspeed cars colors for theme in 0x hex format (left and right)
   const getHyperspeedColors = computed(() => {
@@ -118,7 +122,7 @@ export function useTheme() {
     currentTheme,
     currentGradientClass,
     getHyperspeedColors,
-    getAccentColor,
+    currentAccentColor,
     setTheme,
   };
 }

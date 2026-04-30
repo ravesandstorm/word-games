@@ -1,6 +1,6 @@
 <template>
     <ClickSpark
-      :spark-color="getAccentColor"
+      :spark-color="currentAccentColor"
       :spark-size="15"
       :spark-radius="20"
       :spark-count="7"
@@ -28,7 +28,7 @@
           >
             <!-- Game Image/Icon -->
             <div
-                class="h-36 bg-gradient-to-br overflow-hidden relative rounded-lg"
+                class="h-36 bg-gradient-to-br overflow-hidden relative rounded-tr-xl rounded-bl-xl"
                 :class="game.gradient">
               <div class="absolute inset-0 flex items-center justify-center">
                 <div class="text-8xl opacity-20 group-hover:opacity-30 transition-opacity">
@@ -74,8 +74,8 @@
                 <span class="text-gray-500 text-3xl">|</span>
                 <button
                   :class="[
-                    'px-3 py-3 rounded-xl font-semibold text-sm transition-all transform group-hover:scale-110',
-                    getAccentColor,
+                    'px-3 py-3 rounded-tl-xl rounded-br-xl font-semibold text-sm transition-all transform group-hover:scale-110',
+                    currentAccentColor,
                     'text-white'
                   ]"
                 >
@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-const { getAccentColor, currentGradientClass, getHyperspeedColors } = useTheme();
+const { currentAccentColor, currentGradientClass, getHyperspeedColors } = useTheme();
 const hoveredGame = ref<string | null>(null);
 
 // Hyperspeed options with theme-based background color
