@@ -32,9 +32,10 @@ export default defineNuxtConfig({
       include: [
         'three',
         'postprocessing',
+        'socket.io-client',
       ],
     },
   },
-
+  css: ["/assets/css/main.css"],
   compatibilityDate: "2024-11-01",
 });

@@ -110,7 +110,7 @@ const showExitConfirm = ref(false);
 const showResetConfirm = ref(false);
 const showSkipConfirm = ref(false);
 
-const boardSize = ref(15);
+const boardSize = ref(20);
 const maxLettersPerTurn = ref(3);
 const roundsPerIncrement = ref(6);
 

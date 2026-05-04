@@ -12,15 +12,16 @@
     <div v-if="game.gameStatus.value !== 'lost' || flippingRow !== -1" class="max-w-lg w-full">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
         <div class="text-center mb-6">
-          <div class="flex justify-between items-center mb-2">
+          <div class="flex justify-between items-center mb-4">
             <button
               @click="handleHomeClick"
               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all"
             >
               ← Home
             </button>
-            <h1 class="text-4xl font-bold text-white">Wordle</h1>
-            <div class="w-20"></div> </div>
+            <h1 class="text-4xl font-bold text-white tracking-wider">Wordle</h1>
+            <div class="w-20"></div>
+          </div>
           <div class="flex justify-center gap-6 text-white">
             <div class="bg-white/20 rounded-lg px-4 py-2">
               <p class="text-sm text-gray-300">Win Streak</p>
